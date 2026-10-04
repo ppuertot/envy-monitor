@@ -10,6 +10,12 @@ Ideas pendientes para `envy`. No implementadas todavía.
   inicio y reiniciarlo si falla.
 - **Contenedor Docker**: ~~imagen mínima con acceso a `nvidia-smi`~~ **hecho**
   (`Dockerfile` + `docker-compose.yml`, usa `--gpus all`).
+- **Publicar imagen en GHCR** (`ghcr.io`): **pendiente**. El token actual de `gh`
+  no tiene scopes de paquetes (`user/packages` → 403); requiere
+  `gh auth refresh -s write:packages,read:packages,delete:packages`. Después:
+  `docker tag … ghcr.io/ppuertot/envy-monitor:latest && docker push …`.
+  Alternativa **ya verificada**: Docker Hub (`docker.io/ppuertot/envy-monitor`),
+  las credenciales actuales sí permiten `push`.
 - **Puerto/host parametrizables y unificados**: hoy el puerto está disperso
   (`run.sh [puerto]` por argumento; `app.py`, `Dockerfile` y `docker-compose.yml`
   con `8000` fijo). Unificar en variables (p. ej. `ENVY_PORT` / `ENVY_HOST`)
