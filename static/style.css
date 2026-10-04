@@ -223,7 +223,7 @@ main {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px 28px;
   font-variant-numeric: tabular-nums;
 }
@@ -283,7 +283,7 @@ main {
   .gpu-block { margin-bottom: 0; }
   .gpu-block h2 { font-size: 17px; }
   .stats {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 2px 16px;
   }
   .proc-table { min-width: 0; }
