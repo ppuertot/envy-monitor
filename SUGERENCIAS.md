@@ -40,7 +40,9 @@ Ideas pendientes para `envy`. No implementadas todavía.
 ## Rendimiento / arquitectura
 
 - **Migrar a NVML en proceso** (`pynvml` / `nvidia-ml-py`) en vez de invocar
-  `nvidia-smi` como subproceso: menos overhead, sin parseo de texto.
+  `nvidia-smi` como subproceso: ~~menos overhead, sin parseo de texto~~
+  **hecho** en la rama `pynvml` (backend `nvml` seleccionable con
+  `ENVY_BACKEND`).
 - **WebSocket** en lugar de SSE si se necesita enviar configuración desde el
   cliente (elegir intervalo, GPU, pausar).
 - **Multi-nodo**: si crece a varias máquinas, evaluar Prometheus +

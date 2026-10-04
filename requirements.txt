@@ -1,2 +1,6 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
+
+# Backend NVML (provee el modulo `pynvml`). Opcional: sin el, envy usa
+# nvidia-smi. Con el instalado, ENVY_BACKEND=auto selecciona NVML.
+nvidia-ml-py>=12.535

@@ -47,6 +47,18 @@ function setStatus(kind, text) {
   el.title = text || "";
 }
 
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+// nvidia-smi trunca el nombre del proceso; NVML entrega el cmdline completo.
+function shortProc(name) {
+  const first = String(name).trim().split(/\s+/)[0] || String(name);
+  return first.split("/").pop() || String(name);
+}
+
 /* --------------------- construcción de la UI --------------------- */
 
 function chartOptions(width) {
@@ -231,8 +243,8 @@ function renderProcesses(processes) {
       (p) => `<tr>
         <td>${p.gpu}</td>
         <td>${p.pid}</td>
-        <td>${p.type}</td>
-        <td title="${p.name}">${p.name}</td>
+        <td>${esc(p.type)}</td>
+        <td title="${esc(p.name)}">${esc(shortProc(p.name))}</td>
         <td class="num">${p.memory} MiB</td>
       </tr>`
     )
@@ -269,6 +281,8 @@ function applySnapshot(data) {
     showError(data.sample.error);
   }
   renderCharts();
+  const backend = data.backend || (data.sample && data.sample.backend) || "nvidia-smi";
+  $("#backend").textContent = backend;
   $("#meta").textContent = `intervalo ${state.intervalLabel} · ventana ${state.windowLabel} · ${state.maxPoints} muestras`;
 }
 
