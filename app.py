@@ -27,7 +27,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from nvidia import query_gpus, query_processes
+from nvidia import BACKEND, query_gpus, query_processes
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -78,6 +78,7 @@ class Monitor:
             "error": self.error,
             "interval": self.interval,
             "window": self.max_points * self.interval,
+            "backend": BACKEND,
         }
         self.latest = sample
 
@@ -109,6 +110,7 @@ class Monitor:
             "sample": self.latest,
             "interval": self.interval,
             "window": self.max_points * self.interval,
+            "backend": BACKEND,
         }
 
 
