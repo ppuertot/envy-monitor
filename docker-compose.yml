@@ -1,0 +1,25 @@
+services:
+  envy:
+    build: .
+    image: envy:latest
+    container_name: envy
+    ports:
+      - "8000:8000"
+    environment:
+      ENVY_INTERVAL: "2"
+      ENVY_WINDOW: "60"
+    # Docker Compose v2.30+. En versiones anteriores usa el bloque
+    # comentado al final (deploy.resources.reservations.devices).
+    gpus: all
+    restart: unless-stopped
+    # Descomenta para que la pestaña Processes vea los procesos del host:
+    # pid: host
+
+# --- Alternativa si `gpus: all` no está soportado ---
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              count: all
+#              capabilities: [utility]

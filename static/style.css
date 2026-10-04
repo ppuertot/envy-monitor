@@ -1,0 +1,165 @@
+:root {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6b7280;
+  --line: #e3e3e3;
+  --grid: #ececec;
+  --accent: #2ec27e;
+  --accent-soft: rgba(46, 194, 126, 0.12);
+  --titlebar: #2b2b2b;
+  --titlebar-text: #f5f5f5;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", Cantarell, Ubuntu, "Helvetica Neue", sans-serif;
+  font-size: 14px;
+}
+
+/* ---------- Barra de título ---------- */
+.titlebar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 42px;
+  padding: 0 12px;
+  background: var(--titlebar);
+  color: var(--titlebar-text);
+}
+.titlebar-title { font-weight: 600; font-size: 14px; }
+.titlebar-left .menu { opacity: 0.85; font-size: 13px; }
+.titlebar-right { display: flex; justify-content: flex-end; }
+
+.status {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #9ca3af; display: inline-block;
+}
+.status--ok { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.status--error { background: #e5484d; box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.15); }
+.status--connecting { background: #f5a623; }
+
+/* ---------- Tabs ---------- */
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  background: #f6f6f6;
+}
+.tab {
+  appearance: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: transparent;
+  padding: 8px 16px;
+  font: inherit;
+  color: #333;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+}
+.tab:hover { background: #ececec; }
+.tab.is-active {
+  background: var(--bg);
+  border-color: var(--line);
+  font-weight: 600;
+}
+
+main { padding: 18px 22px 40px; max-width: 1180px; }
+
+.hidden { display: none !important; }
+
+/* ---------- Banner de error ---------- */
+.banner {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid #f3c2c4;
+  background: #fdecec;
+  color: #a32126;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* ---------- Bloque por GPU ---------- */
+.gpu-block { margin-bottom: 34px; }
+.gpu-block h2 { font-size: 19px; margin: 4px 0 6px; }
+.gpu-block h3 {
+  font-size: 15px;
+  margin: 18px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gpu-block h3 .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.chart-head, .chart-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.chart-head { margin-bottom: 2px; }
+.chart-foot { margin-top: 2px; }
+
+.chart {
+  width: 100%;
+  height: 130px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.chart .u-legend { display: none; }
+
+.dashed {
+  border-top: 1px dashed #cfcfcf;
+  margin: 16px 0 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 4px 28px;
+  font-variant-numeric: tabular-nums;
+}
+.stats div { line-height: 1.7; white-space: nowrap; }
+.stats .label { color: var(--muted); }
+.stats .val { font-weight: 500; }
+
+/* ---------- Tabla de procesos ---------- */
+.proc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.proc-table th, .proc-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+}
+.proc-table th { color: var(--muted); font-weight: 600; }
+.proc-table td.num, .proc-table th.num { text-align: right; }
+.proc-table .empty { text-align: center; color: var(--muted); padding: 22px; }
+
+.footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 14px;
+  border-top: 1px solid var(--line);
+  background: #fafafa;
+  color: var(--muted);
+  font-size: 12px;
+}
+.footer code { background: #eee; padding: 1px 5px; border-radius: 4px; }

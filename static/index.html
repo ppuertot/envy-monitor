@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NVIDIA System Monitor</title>
+  <link rel="stylesheet" href="/static/vendor/uPlot.min.css" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="titlebar">
+    <div class="titlebar-left">
+      <span class="menu">Monitor</span>
+    </div>
+    <div class="titlebar-title">NVIDIA System Monitor</div>
+    <div class="titlebar-right">
+      <span id="status" class="status status--connecting" title="Estado de la conexión"></span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab is-active" data-tab="utilization">Utilization</button>
+    <button class="tab" data-tab="processes">Processes</button>
+  </nav>
+
+  <main>
+    <div id="banner" class="banner hidden"></div>
+
+    <section id="tab-utilization" class="tab-panel">
+      <div id="gpus"></div>
+    </section>
+
+    <section id="tab-processes" class="tab-panel hidden">
+      <h2>Processes</h2>
+      <table class="proc-table">
+        <thead>
+          <tr><th>GPU</th><th>PID</th><th>Tipo</th><th>Proceso</th><th class="num">Memoria</th></tr>
+        </thead>
+        <tbody id="proc-body">
+          <tr><td colspan="5" class="empty">Sin procesos usando la GPU</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Datos: <code>nvidia-smi</code></span>
+    <span id="meta"></span>
+  </footer>
+
+  <script src="/static/vendor/uPlot.iife.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
