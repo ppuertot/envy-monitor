@@ -116,16 +116,30 @@ function areaFill(u) {
   return grad;
 }
 
+// Dibuja las etiquetas 0% / 100% DENTRO del área de la gráfica.
+function drawScaleLabels(u) {
+  const { ctx, bbox } = u;
+  if (!ctx || !bbox) return;
+  ctx.save();
+  ctx.font = "12px sans-serif";
+  ctx.fillStyle = chartColors().axis;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText("100%", bbox.left + 8, bbox.top + 4);
+  ctx.textBaseline = "bottom";
+  ctx.fillText("0%", bbox.left + 8, bbox.top + bbox.height - 3);
+  ctx.restore();
+}
+
 function chartOptions(width) {
-  const narrow = width < 420;
-  const axisW = narrow ? 34 : 46;
   const c = chartColors();
   return {
     width,
     height: chartHeight(),
-    padding: [8, axisW, 2, 8],
+    padding: [8, 10, 2, 8],
     legend: { show: false },
     cursor: { show: false },
+    hooks: { draw: [drawScaleLabels] },
     scales: {
       x: { time: true },
       y: { range: [0, 100], auto: false },
@@ -140,14 +154,12 @@ function chartOptions(width) {
       },
       {
         side: 1,
-        size: axisW,
-        stroke: c.axis,
-        font: "12px sans-serif",
+        size: 0,
+        stroke: c.tick,
         ticks: { show: false },
         grid: { stroke: c.grid, width: 1 },
         splits: () => [0, 25, 50, 75, 100],
-        // Solo se etiquetan 0% y 100% (como el original); el resto son líneas guía.
-        values: (u, splits) => splits.map((s) => (s === 0 || s === 100 ? `${s}%` : "")),
+        values: () => [],
       },
     ],
     series: [
