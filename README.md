@@ -5,6 +5,8 @@ Versión web del monitor de GPU. Toda la información proviene de **`nvidia-smi`
 **Utilization** y **Processes**, las gráficas de 60 s con paso de 2 s y la
 curva verde del original.
 
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+
 ## Requisitos
 
 **Uso directo (Python):**
@@ -106,3 +108,7 @@ nvidia-smi ──▶ Monitor (muestrea cada 2 s) ──▶ SSE /api/stream ─�
 - Para varias GPU se genera un bloque de gráficas + estadísticas por cada una.
 - Para producción en flota (varios nodos) conviene Prometheus + `dcgm-exporter`
   + Grafana; este proyecto está pensado para una máquina.
+
+## Licencia
+
+[MIT](LICENSE) © 2026 Pedro Puerto
