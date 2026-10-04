@@ -81,13 +81,39 @@ function shortProc(name) {
 /* --------------------- construcción de la UI --------------------- */
 
 function chartHeight() {
-  return window.innerWidth <= 640 ? 104 : CHART_H;
+  // Se adapta al alto de la ventana (dos paneles: GPU y memoria).
+  const byHeight = Math.round(window.innerHeight * 0.28);
+  const cap = window.innerWidth <= 640 ? 150 : 380;
+  return Math.max(CHART_H, Math.min(byHeight, cap));
 }
 
 function chartColors() {
   return document.documentElement.dataset.theme === "dark"
-    ? { tick: "#3a4150", grid: "#2a2e37", axis: "#9aa4b2", fill: "rgba(46,194,126,0.12)" }
-    : { tick: "#c9c9c9", grid: "#ececec", axis: "#6b7280", fill: "rgba(46,194,126,0.10)" };
+    ? { tick: "#3a4150", grid: "#2a2e37", axis: "#9aa4b2" }
+    : { tick: "#c9c9c9", grid: "#ececec", axis: "#6b7280" };
+}
+
+function hexToRgb(hex) {
+  const h = String(hex).replace("#", "");
+  const v = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(v, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+// El verde sale de la variable CSS --accent (coincide con el punto de estado).
+function accentColor() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+  return v || "#2ec27e";
+}
+
+// Relleno en degradado bajo la curva, como el original.
+function areaFill(u) {
+  if (!u.bbox) return "transparent";
+  const { r, g, b } = hexToRgb(accentColor());
+  const grad = u.ctx.createLinearGradient(0, u.bbox.top, 0, u.bbox.top + u.bbox.height);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0.30)`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0.02)`);
+  return grad;
 }
 
 function chartOptions(width) {
@@ -120,15 +146,16 @@ function chartOptions(width) {
         ticks: { show: false },
         grid: { stroke: c.grid, width: 1 },
         splits: () => [0, 25, 50, 75, 100],
-        values: (u, splits) => splits.map((s) => `${s}%`),
+        // Solo se etiquetan 0% y 100% (como el original); el resto son líneas guía.
+        values: (u, splits) => splits.map((s) => (s === 0 || s === 100 ? `${s}%` : "")),
       },
     ],
     series: [
       {},
       {
-        stroke: "#2ec27e",
+        stroke: accentColor(),
         width: 2,
-        fill: c.fill,
+        fill: areaFill,
         points: { show: false },
       },
     ],
@@ -143,7 +170,7 @@ function applyChartTheme() {
       u.axes[0].grid.stroke = c.grid;
       u.axes[1].stroke = c.axis;
       u.axes[1].grid.stroke = c.grid;
-      u.series[1].fill = c.fill;
+      u.series[1].stroke = accentColor();
       u.redraw();
     }
   }
