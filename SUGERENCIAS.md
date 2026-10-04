@@ -10,6 +10,11 @@ Ideas pendientes para `envy`. No implementadas todavía.
   inicio y reiniciarlo si falla.
 - **Contenedor Docker**: ~~imagen mínima con acceso a `nvidia-smi`~~ **hecho**
   (`Dockerfile` + `docker-compose.yml`, usa `--gpus all`).
+- **Puerto/host parametrizables y unificados**: hoy el puerto está disperso
+  (`run.sh [puerto]` por argumento; `app.py`, `Dockerfile` y `docker-compose.yml`
+  con `8000` fijo). Unificar en variables (p. ej. `ENVY_PORT` / `ENVY_HOST`)
+  respetadas por las tres vías, incluidos el `CMD` y el `HEALTHCHECK` del
+  contenedor y el mapeo de `ports` en Compose.
 - **Configuración por archivo/CLI**: además de `ENVY_INTERVAL` / `ENVY_WINDOW`,
   permitir elegir puerto, bind, GPUs a mostrar y tema.
 
