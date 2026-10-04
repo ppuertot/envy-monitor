@@ -116,22 +116,6 @@ function areaFill(u) {
   return grad;
 }
 
-// Dibuja las etiquetas 0% / 100% DENTRO del área de la gráfica.
-function drawScaleLabels(u) {
-  const { ctx, bbox } = u;
-  if (!ctx || !bbox) return;
-  ctx.save();
-  ctx.font = "12px sans-serif";
-  ctx.fillStyle = chartColors().axis;
-  ctx.textAlign = "right";
-  const x = bbox.left + bbox.width - 8;
-  ctx.textBaseline = "top";
-  ctx.fillText("100%", x, bbox.top + 4);
-  ctx.textBaseline = "bottom";
-  ctx.fillText("0%", x, bbox.top + bbox.height - 3);
-  ctx.restore();
-}
-
 function chartOptions(width) {
   const c = chartColors();
   return {
@@ -140,7 +124,6 @@ function chartOptions(width) {
     padding: [8, 10, 2, 8],
     legend: { show: false },
     cursor: { show: false },
-    hooks: { draw: [drawScaleLabels] },
     scales: {
       x: { time: true },
       y: { range: [0, 100], auto: false },
@@ -201,9 +184,9 @@ function buildGpuBlock(gpu) {
   block.className = "gpu-block";
   block.innerHTML = `
     <h2>GPU Utilization</h2>
-    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span></div>
+    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span><span class="scale-label">100%</span></div>
     <div class="chart" id="chart-gpu-${idx}"></div>
-    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span></div>
+    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span><span class="scale-label">0%</span></div>
 
     <h3><span class="dot"></span>${gpu.name}</h3>
     <div class="stats">
@@ -216,9 +199,9 @@ function buildGpuBlock(gpu) {
     <div class="dashed"></div>
 
     <h2 style="margin-top:18px">Memory Utilization</h2>
-    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span></div>
+    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span><span class="scale-label">100%</span></div>
     <div class="chart" id="chart-mem-${idx}"></div>
-    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span></div>
+    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span><span class="scale-label">0%</span></div>
 
     <h3><span class="dot"></span>${gpu.name}</h3>
     <div class="stats">
