@@ -16,8 +16,9 @@ services:
     # comentado al final (deploy.resources.reservations.devices).
     gpus: all
     restart: unless-stopped
-    # Descomenta para que la pestaña Processes vea los procesos del host:
-    # pid: host
+    # Comparte el PID namespace del host para que la pestaña Processes
+    # vea los procesos que usan la GPU.
+    pid: host
 
 # --- Alternativa si `gpus: all` no está soportado ---
 #    deploy:
@@ -30,3 +31,4 @@ services:
 
 volumes:
   envy-data:
+    name: envy-data
