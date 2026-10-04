@@ -4,6 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NVIDIA System Monitor</title>
+  <script>
+    // Resuelve el tema antes de pintar para evitar parpadeo.
+    (function () {
+      try {
+        var pref = localStorage.getItem("envy-theme") || "auto";
+        var dark = pref === "dark" ||
+          (pref === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.documentElement.dataset.themePref = pref;
+      } catch (e) {
+        document.documentElement.dataset.theme = "light";
+        document.documentElement.dataset.themePref = "auto";
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="/static/vendor/uPlot.min.css" />
   <link rel="stylesheet" href="/static/style.css" />
 </head>
@@ -14,6 +29,7 @@
     </div>
     <div class="titlebar-title">NVIDIA System Monitor</div>
     <div class="titlebar-right">
+      <button id="theme-toggle" class="theme-toggle" type="button" title="Cambiar tema">Auto</button>
       <span id="status" class="status status--connecting" title="Estado de la conexión"></span>
     </div>
   </header>

@@ -53,6 +53,7 @@ Ideas pendientes para `envy`. No implementadas todavía.
 
 - **Menús `File` / `Help`** funcionales (exportar, acerca de, atajos) en la
   barra superior, hoy son solo texto.
-- **Tema oscuro** y respeto por `prefers-color-scheme`.
+- **Tema oscuro**: ~~y respeto por `prefers-color-scheme`~~ **hecho**
+  (automático según el sistema + toggle manual Auto/Claro/Oscuro).
 - **Responsive**: adaptar la tabla y las gráficas a pantallas pequeñas.
 - **Indicador de reconexión** más visible (tiempo desde la última muestra).

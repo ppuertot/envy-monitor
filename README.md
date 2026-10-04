@@ -167,6 +167,8 @@ nvidia-smi / NVML ──▶ Monitor (cada 2 s) ──┬─▶ SSE /api/stream �
 - Para varias GPU se genera un bloque de gráficas + estadísticas por cada una.
 - Para producción en flota (varios nodos) conviene Prometheus + `dcgm-exporter`
   + Grafana; este proyecto está pensado para una máquina.
+- Tema claro/oscuro: sigue `prefers-color-scheme` del sistema y hay un toggle
+  manual (Auto / Claro / Oscuro) que se recuerda en el navegador.
 
 ## Licencia
 
