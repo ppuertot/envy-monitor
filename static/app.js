@@ -84,9 +84,16 @@ function chartHeight() {
   return window.innerWidth <= 640 ? 104 : CHART_H;
 }
 
+function chartColors() {
+  return document.documentElement.dataset.theme === "dark"
+    ? { tick: "#3a4150", grid: "#2a2e37", axis: "#9aa4b2", fill: "rgba(46,194,126,0.12)" }
+    : { tick: "#c9c9c9", grid: "#ececec", axis: "#6b7280", fill: "rgba(46,194,126,0.10)" };
+}
+
 function chartOptions(width) {
   const narrow = width < 420;
   const axisW = narrow ? 34 : 46;
+  const c = chartColors();
   return {
     width,
     height: chartHeight(),
@@ -99,19 +106,19 @@ function chartOptions(width) {
     },
     axes: [
       {
-        stroke: "#c9c9c9",
+        stroke: c.tick,
         size: 0,
         ticks: { show: false },
-        grid: { stroke: "#ececec", width: 1 },
+        grid: { stroke: c.grid, width: 1 },
         values: () => [],
       },
       {
         side: 1,
         size: axisW,
-        stroke: "#6b7280",
+        stroke: c.axis,
         font: "12px sans-serif",
         ticks: { show: false },
-        grid: { stroke: "#ececec", width: 1 },
+        grid: { stroke: c.grid, width: 1 },
         splits: () => [0, 25, 50, 75, 100],
         values: (u, splits) => splits.map((s) => `${s}%`),
       },
@@ -121,11 +128,25 @@ function chartOptions(width) {
       {
         stroke: "#2ec27e",
         width: 2,
-        fill: "rgba(46,194,126,0.10)",
+        fill: c.fill,
         points: { show: false },
       },
     ],
   };
+}
+
+// Aplica los colores del tema a las gráficas ya creadas.
+function applyChartTheme() {
+  const c = chartColors();
+  for (const p of Object.values(state.plots)) {
+    for (const u of [p.gpu, p.mem]) {
+      u.axes[0].grid.stroke = c.grid;
+      u.axes[1].stroke = c.axis;
+      u.axes[1].grid.stroke = c.grid;
+      u.series[1].fill = c.fill;
+      u.redraw();
+    }
+  }
 }
 
 function makePlot(el) {
@@ -436,6 +457,37 @@ function connect() {
   es.onerror = () => setStatus("connecting", "Reconectando…");
 }
 
+/* ----------------------------- tema ------------------------------ */
+
+const THEME_ORDER = ["auto", "light", "dark"];
+const THEME_LABEL = { auto: "Auto", light: "Claro", dark: "Oscuro" };
+
+function applyTheme(pref) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const dark = pref === "dark" || (pref === "auto" && media.matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.documentElement.dataset.themePref = pref;
+  try { localStorage.setItem("envy-theme", pref); } catch (e) { /* modo privado */ }
+  const btn = $("#theme-toggle");
+  if (btn) btn.textContent = THEME_LABEL[pref] || "Auto";
+  applyChartTheme();
+}
+
+function initTheme() {
+  applyTheme(document.documentElement.dataset.themePref || "auto");
+  const btn = $("#theme-toggle");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const cur = document.documentElement.dataset.themePref || "auto";
+      const next = THEME_ORDER[(THEME_ORDER.indexOf(cur) + 1) % THEME_ORDER.length];
+      applyTheme(next);
+    });
+  }
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if ((document.documentElement.dataset.themePref || "auto") === "auto") applyTheme("auto");
+  });
+}
+
 /* ---------------------------- pestañas --------------------------- */
 
 const rangeSelect = $("#range");
@@ -466,4 +518,5 @@ window.addEventListener("resize", () => {
   }
 });
 
+initTheme();
 connect();
