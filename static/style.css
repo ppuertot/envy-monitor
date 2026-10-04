@@ -90,7 +90,7 @@ html, body {
   cursor: pointer;
 }
 
-main { padding: 18px 22px 40px; max-width: 1180px; }
+main { padding: 18px 22px 40px; }
 
 .hidden { display: none !important; }
 
