@@ -80,11 +80,17 @@ function shortProc(name) {
 
 /* --------------------- construcción de la UI --------------------- */
 
+function chartHeight() {
+  return window.innerWidth <= 640 ? 104 : CHART_H;
+}
+
 function chartOptions(width) {
+  const narrow = width < 420;
+  const axisW = narrow ? 34 : 46;
   return {
     width,
-    height: CHART_H,
-    padding: [8, 46, 2, 8],
+    height: chartHeight(),
+    padding: [8, axisW, 2, 8],
     legend: { show: false },
     cursor: { show: false },
     scales: {
@@ -101,7 +107,7 @@ function chartOptions(width) {
       },
       {
         side: 1,
-        size: 46,
+        size: axisW,
         stroke: "#6b7280",
         font: "12px sans-serif",
         ticks: { show: false },
@@ -260,11 +266,11 @@ function renderProcesses(processes) {
   body.innerHTML = processes
     .map(
       (p) => `<tr>
-        <td>${p.gpu}</td>
-        <td>${p.pid}</td>
-        <td>${esc(p.type)}</td>
-        <td title="${esc(p.name)}">${esc(shortProc(p.name))}</td>
-        <td class="num">${p.memory} MiB</td>
+        <td data-label="GPU">${p.gpu}</td>
+        <td data-label="PID">${p.pid}</td>
+        <td data-label="Tipo">${esc(p.type)}</td>
+        <td data-label="Proceso" title="${esc(p.name)}">${esc(shortProc(p.name))}</td>
+        <td data-label="Memoria" class="num">${p.memory} MiB</td>
       </tr>`
     )
     .join("");
@@ -446,8 +452,8 @@ document.querySelectorAll(".tab").forEach((tab) => {
     if (target === "utilization") {
       // uPlot necesita saber el ancho cuando el contenedor vuelve a ser visible.
       for (const p of Object.values(state.plots)) {
-        p.gpu.setSize({ width: p.gpuEl.clientWidth, height: CHART_H });
-        p.mem.setSize({ width: p.memEl.clientWidth, height: CHART_H });
+        p.gpu.setSize({ width: p.gpuEl.clientWidth, height: chartHeight() });
+        p.mem.setSize({ width: p.memEl.clientWidth, height: chartHeight() });
       }
     }
   });
@@ -455,8 +461,8 @@ document.querySelectorAll(".tab").forEach((tab) => {
 
 window.addEventListener("resize", () => {
   for (const p of Object.values(state.plots)) {
-    p.gpu.setSize({ width: p.gpuEl.clientWidth, height: CHART_H });
-    p.mem.setSize({ width: p.memEl.clientWidth, height: CHART_H });
+    p.gpu.setSize({ width: p.gpuEl.clientWidth, height: chartHeight() });
+    p.mem.setSize({ width: p.memEl.clientWidth, height: chartHeight() });
   }
 });
 
