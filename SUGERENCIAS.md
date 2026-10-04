@@ -34,8 +34,9 @@ Ideas pendientes para `envy`. No implementadas todavía.
   controlador de memoria, potencia y temperatura superpuestas.
 - **Detalle de procesos**: filtro/búsqueda, agrupar por usuario, matar proceso
   (requiere permisos), historial de memoria por proceso.
-- **Persistencia**: guardar histórico más allá de la ventana en memoria
-  (SQLite o similar) para ver tendencias largas.
+- **Persistencia**: ~~guardar histórico más allá de la ventana en memoria
+  (SQLite o similar) para ver tendencias largas~~ **hecho** (`storage.py`,
+  `/api/history`, selector de rango en la web, retención y volumen Docker).
 
 ## Rendimiento / arquitectura
 

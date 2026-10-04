@@ -1,9 +1,9 @@
 # envy — NVIDIA System Monitor (web)
 
-Versión web del monitor de GPU. Toda la información proviene de **`nvidia-smi`**
-(sin dependencias de NVML ni de binarios nativos). Replica las pestañas
-**Utilization** y **Processes**, las gráficas de 60 s con paso de 2 s y la
-curva verde del original.
+Versión web del monitor de GPU. La información proviene de **`nvidia-smi`** o de
+**NVML** (backend seleccionable, sin binarios nativos). Replica las pestañas
+**Utilization** y **Processes**, las gráficas en vivo (60 s con paso de 2 s) y
+además guarda histórico en **SQLite** para ver rangos largos (hasta 7 días).
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
@@ -44,7 +44,7 @@ python3 -m uvicorn app:app --host 0.0.0.0 --port 8000
 
 ```bash
 docker build -t envy .
-docker run --rm --gpus all -p 8000:8000 envy
+docker run --rm --gpus all -p 8000:8000 -v envy-data:/data envy
 ```
 
 o con Docker Compose:
@@ -55,6 +55,9 @@ docker compose up -d --build
 
 En ambos casos abre `http://localhost:8000`.
 
+> El volumen `/data` guarda el histórico persistido. En Compose es el named
+> volume `envy-data`; sin él, el histórico se pierde al recrear el contenedor.
+
 > Los procesos que aparecen en la pestaña **Processes** dependen del PID
 > namespace: por defecto el contenedor **no** ve los procesos del host y la
 > lista sale vacía. Para verlos, añade `--pid=host` (o `pid: host` en Compose).
@@ -64,8 +67,10 @@ En ambos casos abre `http://localhost:8000`.
 | Variable        | Por defecto | Descripción                              |
 |-----------------|-------------|------------------------------------------|
 | `ENVY_INTERVAL` | `2`         | Segundos entre muestras (paso de la gráfica). |
-| `ENVY_WINDOW`   | `60`        | Segundos de histórico mostrados.         |
+| `ENVY_WINDOW`   | `60`        | Segundos de histórico en memoria (gráfica en vivo). |
 | `ENVY_BACKEND`  | `auto`      | Backend de datos: `auto`, `nvml` o `smi`. |
+| `ENVY_DB`       | `./envy.db` | Ruta del archivo SQLite del histórico.   |
+| `ENVY_RETENTION_DAYS` | `7`   | Días de histórico persistido (poda horaria). |
 
 ### Backends de datos
 
@@ -88,10 +93,33 @@ El backend activo aparece en el pie de la web ("Datos: …") y en `/api/snapshot
 > En NVML el nombre del proceso se obtiene de `/proc/<pid>/cmdline` (la API
 > estándar no lo incluye); por eso puede venir completo y el frontend lo acorta.
 
+## Persistencia del histórico
+
+Además del búfer en memoria de 60 s, cada muestra se guarda en **SQLite** (una
+fila por GPU y muestra). En la web, el selector **Rango** permite elegir
+`60 s (live)`, `5 min`, `1 h`, `24 h` o `7 d`. Para rangos largos se consulta
+`/api/history`, que **reesamplea** por intervalos (agrupa por *bucket*) en vez de
+devolver millones de puntos.
+
+- Ruta del archivo: `ENVY_DB` (por defecto `./envy.db`).
+- Retención: `ENVY_RETENTION_DAYS` días (por defecto 7); se poda una vez por hora.
+- En Docker vive en el volumen `/data` (`envy-data` en Compose).
+- Si no hay persistencia, `/api/history` devuelve series vacías y la web sigue
+  funcionando en modo en vivo.
+
+```sql
+CREATE TABLE samples (
+  ts REAL, gpu INTEGER, name TEXT,
+  gpu_util INTEGER, mem_io INTEGER, mem_used INTEGER, mem_total INTEGER,
+  temp INTEGER, power REAL, clk_graphics INTEGER, clk_memory INTEGER
+);
+```
+
 ## Arquitectura
 
 ```
-nvidia-smi ──▶ Monitor (muestrea cada 2 s) ──▶ SSE /api/stream ──▶ navegador (uPlot)
+nvidia-smi / NVML ──▶ Monitor (cada 2 s) ──┬─▶ SSE /api/stream ──▶ navegador (live)
+                                           └─▶ SQLite ──▶ /api/history ──▶ navegador (5m–7d)
 ```
 
 - **`nvidia.py`** — selecciona el backend (`nvml` o `nvidia-smi`).
@@ -100,6 +128,8 @@ nvidia-smi ──▶ Monitor (muestrea cada 2 s) ──▶ SSE /api/stream ─�
   `G`, que `--query-compute-apps` no reporta).
 - **`nvidia_nvml.py`** — misma información vía NVML (`nvidia-ml-py`), uniendo
   procesos de cómputo y gráficos por PID.
+- **`storage.py`** — histórico en SQLite con consultas reesampleadas y poda por
+  retención.
 - **`app.py`** — FastAPI. Un `Monitor` asíncrono muestrea la GPU en un hilo y
   reparte las muestras a los suscriptores por **Server-Sent Events**.
 - **`static/`** — front-end sin build step. Gráficas con **uPlot** (vendorizado).
@@ -109,8 +139,9 @@ nvidia-smi ──▶ Monitor (muestrea cada 2 s) ──▶ SSE /api/stream ─�
 | Endpoint        | Descripción                                   |
 |-----------------|-----------------------------------------------|
 | `GET /`         | Página del monitor.                           |
-| `GET /api/snapshot` | Estado actual + histórico (JSON).         |
+| `GET /api/snapshot` | Estado actual + histórico en memoria (JSON). |
 | `GET /api/stream`   | Flujo SSE: `snapshot` inicial + `sample`s. |
+| `GET /api/history`  | Histórico reesampleado (`seconds`, `points`, `gpu`). |
 
 ## Mapeo a nvidia-smi
 

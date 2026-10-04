@@ -21,6 +21,16 @@
   <nav class="tabs">
     <button class="tab is-active" data-tab="utilization">Utilization</button>
     <button class="tab" data-tab="processes">Processes</button>
+    <div class="range">
+      <label for="range">Rango</label>
+      <select id="range">
+        <option value="60" selected>60 s (live)</option>
+        <option value="300">5 min</option>
+        <option value="3600">1 h</option>
+        <option value="86400">24 h</option>
+        <option value="604800">7 d</option>
+      </select>
+    </div>
   </nav>
 
   <main>

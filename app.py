@@ -7,8 +7,10 @@ Ejecutar:
     uvicorn app:app --host 0.0.0.0 --port 8000
 
 Variables de entorno:
-    ENVY_INTERVAL   segundos entre muestras (por defecto 2)
-    ENVY_WINDOW     segundos de histórico en las gráficas (por defecto 60)
+    ENVY_INTERVAL         segundos entre muestras (por defecto 2)
+    ENVY_WINDOW           segundos de histórico en memoria (por defecto 60)
+    ENVY_DB               ruta del SQLite (por defecto ./envy.db)
+    ENVY_RETENTION_DAYS   días de histórico persistido (por defecto 7)
 """
 
 from __future__ import annotations
@@ -28,12 +30,15 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from nvidia import BACKEND, query_gpus, query_processes
+from storage import Store
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
 INTERVAL = float(os.environ.get("ENVY_INTERVAL", "2"))
 WINDOW = float(os.environ.get("ENVY_WINDOW", "60"))
+DB_PATH = os.environ.get("ENVY_DB", str(BASE_DIR / "envy.db"))
+RETENTION_DAYS = float(os.environ.get("ENVY_RETENTION_DAYS", "7"))
 
 
 class Monitor:
@@ -48,6 +53,7 @@ class Monitor:
         self.processes: list[dict[str, Any]] = []
         self.error: str | None = None
         self.subscribers: set[asyncio.Queue[dict[str, Any]]] = set()
+        self.store: Store | None = None
         self._tick = 0
 
     async def run(self) -> None:
@@ -92,17 +98,30 @@ class Monitor:
                     "io": g["utilization"]["memory"],
                     "used": g["memory"]["used"],
                     "total": g["memory"]["total"],
+                    "temp": g["temperature"]["gpu"],
+                    "power": g["power"]["draw"],
+                    "clk_graphics": g["clocks"]["graphics"],
+                    "clk_memory": g["clocks"]["memory"],
                 }
                 for g in gpus
             ],
         }
         self.history.append(point)
 
+        if self.store is not None:
+            await asyncio.to_thread(self._persist, point)
+
         for queue in list(self.subscribers):
             try:
                 queue.put_nowait(sample)
             except asyncio.QueueFull:
                 pass
+
+    def _persist(self, point: dict[str, Any]) -> None:
+        """Escritura + poda; se ejecuta en un hilo aparte."""
+        assert self.store is not None
+        self.store.write(point)
+        self.store.prune()
 
     def snapshot_payload(self) -> dict[str, Any]:
         return {
@@ -111,6 +130,8 @@ class Monitor:
             "interval": self.interval,
             "window": self.max_points * self.interval,
             "backend": BACKEND,
+            "persistence": self.store is not None,
+            "retention_days": RETENTION_DAYS,
         }
 
 
@@ -119,6 +140,7 @@ monitor = Monitor(INTERVAL, WINDOW)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    monitor.store = Store(DB_PATH, RETENTION_DAYS)
     task = asyncio.create_task(monitor.run())
     try:
         yield
@@ -126,6 +148,7 @@ async def lifespan(_: FastAPI):
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await task
+        monitor.store.close()
 
 
 app = FastAPI(title="envy", lifespan=lifespan)
@@ -138,6 +161,33 @@ def _sse(event: str, data: Any) -> str:
 @app.get("/api/snapshot")
 async def api_snapshot() -> dict[str, Any]:
     return monitor.snapshot_payload()
+
+
+@app.get("/api/history")
+async def api_history(
+    seconds: float = 300.0, points: int = 300, gpu: int | None = None
+) -> dict[str, Any]:
+    """Histórico persistido, reesampleado a ~`points` buckets.
+
+    Si se omite `gpu`, devuelve una serie por cada GPU del rango.
+    """
+    now = time.time()
+    start = now - max(1.0, seconds)
+    points = max(2, min(points, 3000))
+    step = max(1.0, (now - start) / points)
+
+    if monitor.store is None:
+        series: dict[str, Any] = {}
+    elif gpu is None:
+        series = await asyncio.to_thread(
+            monitor.store.history_range, start, now, step
+        )
+    else:
+        series = {str(gpu): await asyncio.to_thread(
+            monitor.store.history, gpu, start, now, step
+        )}
+
+    return {"from": start, "to": now, "step": step, "series": series}
 
 
 @app.get("/api/stream")

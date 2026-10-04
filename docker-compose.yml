@@ -8,6 +8,10 @@ services:
     environment:
       ENVY_INTERVAL: "2"
       ENVY_WINDOW: "60"
+      ENVY_DB: /data/envy.db
+      ENVY_RETENTION_DAYS: "7"
+    volumes:
+      - envy-data:/data
     # Docker Compose v2.30+. En versiones anteriores usa el bloque
     # comentado al final (deploy.resources.reservations.devices).
     gpus: all
@@ -23,3 +27,6 @@ services:
 #            - driver: nvidia
 #              count: all
 #              capabilities: [utility]
+
+volumes:
+  envy-data:
