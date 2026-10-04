@@ -123,11 +123,12 @@ function drawScaleLabels(u) {
   ctx.save();
   ctx.font = "12px sans-serif";
   ctx.fillStyle = chartColors().axis;
-  ctx.textAlign = "left";
+  ctx.textAlign = "right";
+  const x = bbox.left + bbox.width - 8;
   ctx.textBaseline = "top";
-  ctx.fillText("100%", bbox.left + 8, bbox.top + 4);
+  ctx.fillText("100%", x, bbox.top + 4);
   ctx.textBaseline = "bottom";
-  ctx.fillText("0%", bbox.left + 8, bbox.top + bbox.height - 3);
+  ctx.fillText("0%", x, bbox.top + bbox.height - 3);
   ctx.restore();
 }
 
