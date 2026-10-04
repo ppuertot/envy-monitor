@@ -167,8 +167,8 @@ nvidia-smi / NVML ──▶ Monitor (cada 2 s) ──┬─▶ SSE /api/stream �
 
 ## Notas
 
-- Si `nvidia-smi` falla o no existe, la UI muestra el error en un banner y
-  sigue reconectándose.
+- Si el backend (`nvidia-smi` o NVML) falla o no está disponible, la UI muestra
+  el error en un banner y sigue reconectándose.
 - Para varias GPU se genera un bloque de gráficas + estadísticas por cada una.
 - Para producción en flota (varios nodos) conviene Prometheus + `dcgm-exporter`
   + Grafana; este proyecto está pensado para una máquina.

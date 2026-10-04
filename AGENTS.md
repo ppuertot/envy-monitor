@@ -30,6 +30,7 @@ Principios del proyecto:
 | `Dockerfile`, `docker-compose.yml` | Ejecución en contenedor |
 | `run.sh` | Arranque directo (acepta puerto como argumento) |
 | `README.md`, `SUGERENCIAS.md`, `docs/docker-gpu.md` | Documentación |
+| `LICENSE` | Licencia MIT |
 
 ## Entorno
 
