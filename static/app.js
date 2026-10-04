@@ -80,11 +80,9 @@ function shortProc(name) {
 
 /* --------------------- construcción de la UI --------------------- */
 
-function chartHeight() {
-  // Se adapta al alto de la ventana (dos paneles: GPU y memoria).
-  const byHeight = Math.round(window.innerHeight * 0.28);
-  const cap = window.innerWidth <= 640 ? 150 : 380;
-  return Math.max(CHART_H, Math.min(byHeight, cap));
+function plotHeight(el) {
+  const h = el ? el.clientHeight : 0;
+  return Math.max(80, h || CHART_H);
 }
 
 function chartColors() {
@@ -116,11 +114,11 @@ function areaFill(u) {
   return grad;
 }
 
-function chartOptions(width) {
+function chartOptions(width, height) {
   const c = chartColors();
   return {
     width,
-    height: chartHeight(),
+    height,
     padding: [0, 0, 0, 0],
     legend: { show: false },
     cursor: { show: false },
@@ -175,7 +173,7 @@ function applyChartTheme() {
 
 function makePlot(el) {
   const width = Math.max(200, el.clientWidth || 600);
-  return new uPlot(chartOptions(width), [[], []], el);
+  return new uPlot(chartOptions(width, plotHeight(el)), [[], []], el);
 }
 
 function buildGpuBlock(gpu) {
@@ -514,12 +512,11 @@ function initTheme() {
 
 // Ajusta el tamaño de todas las gráficas al ancho real de su contenedor.
 function sizePlots() {
-  const h = chartHeight();
   for (const p of Object.values(state.plots)) {
-    const w1 = p.gpuEl.clientWidth;
-    if (w1 && (p.gpu.width !== w1 || p.gpu.height !== h)) p.gpu.setSize({ width: w1, height: h });
-    const w2 = p.memEl.clientWidth;
-    if (w2 && (p.mem.width !== w2 || p.mem.height !== h)) p.mem.setSize({ width: w2, height: h });
+    const w1 = p.gpuEl.clientWidth, h1 = plotHeight(p.gpuEl);
+    if (w1 && (p.gpu.width !== w1 || p.gpu.height !== h1)) p.gpu.setSize({ width: w1, height: h1 });
+    const w2 = p.memEl.clientWidth, h2 = plotHeight(p.memEl);
+    if (w2 && (p.mem.width !== w2 || p.mem.height !== h2)) p.mem.setSize({ width: w2, height: h2 });
   }
 }
 

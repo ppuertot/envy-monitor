@@ -54,6 +54,12 @@ html, body {
   font-size: 14px;
 }
 
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* ---------- Barra de título ---------- */
 .titlebar {
   display: grid;
@@ -63,6 +69,7 @@ html, body {
   padding: 0 12px;
   background: var(--titlebar);
   color: var(--titlebar-text);
+  flex: none;
 }
 .titlebar-title { font-weight: 600; font-size: 14px; }
 .titlebar-left .menu { opacity: 0.85; font-size: 13px; }
@@ -96,6 +103,7 @@ html, body {
   padding: 0 10px;
   border-bottom: 1px solid var(--line);
   background: var(--tabs-bg);
+  flex: none;
 }
 .tab {
   appearance: none;
@@ -134,7 +142,14 @@ html, body {
   cursor: pointer;
 }
 
-main { padding: 18px 22px 40px; }
+main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+}
 
 .hidden { display: none !important; }
 
@@ -150,7 +165,23 @@ main { padding: 18px 22px 40px; }
 }
 
 /* ---------- Bloque por GPU ---------- */
-.gpu-block { margin-bottom: 34px; }
+.tab-panel { display: flex; flex-direction: column; min-height: 0; }
+#tab-utilization { flex: 1 1 auto; }
+#gpus {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.gpu-block {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+.gpu-block > *:not(.chart) { flex: none; }
 .gpu-block h2 { font-size: 19px; margin: 4px 0 6px; }
 .gpu-block h3 {
   font-size: 15px;
@@ -176,6 +207,8 @@ main { padding: 18px 22px 40px; }
 .chart-foot { margin-top: 2px; }
 
 .chart {
+  flex: 1 1 0;
+  min-height: 80px;
   width: 100%;
   border: 1px solid var(--line);
   background: var(--panel);
@@ -219,8 +252,8 @@ main { padding: 18px 22px 40px; }
 .proc-table .empty { text-align: center; color: var(--muted); padding: 22px; }
 
 .footer {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
+  position: static;
+  flex: none;
   display: flex;
   justify-content: space-between;
   padding: 6px 14px;
@@ -247,7 +280,7 @@ main { padding: 18px 22px 40px; }
     justify-content: flex-end;
     padding: 4px 4px 6px;
   }
-  .gpu-block { margin-bottom: 26px; }
+  .gpu-block { margin-bottom: 0; }
   .gpu-block h2 { font-size: 17px; }
   .stats {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
