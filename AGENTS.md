@@ -109,7 +109,9 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
 - **Python**: stdlib + FastAPI. Evita añadir dependencias nuevas; si hace falta,
   justifícalo y actualiza `requirements.txt`.
 - **Frontend**: JS "vanilla", sin bundler. uPlot va **vendorizado** en
-  `static/vendor/` (no CDN, para que funcione sin red).
+  `static/vendor/` (no CDN, para que funcione sin red). Un único breakpoint
+  (`@media (max-width: 640px)`); las gráficas se dimensionan al tamaño real del
+  contenedor (`plotHeight(el)` + `ResizeObserver`), no a un `%` del viewport.
 - **Idioma**: comentarios, mensajes y UI en **español**; nombres de código en
   inglés.
 - **Contrato de datos**: cualquier backend debe devolver el mismo diccionario
@@ -132,13 +134,20 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
 - **Persistencia**: `prune()` se autolimita a una vez por hora; no lo llames en
   bucle. El esquema es aditivo.
 - **uPlot**: si actualizas la versión, reemplaza los archivos de `static/vendor/`
-  (no uses CDN).
+  (no uses CDN). Las gráficas usan `paths.spline()` para la curva suave y el
+  verde sale de la variable CSS `--accent`.
+- **Tema**: el tema efectivo vive en `document.documentElement.dataset.theme`
+  (`light`/`dark`); un script en `<head>` lo resuelve antes de pintar y el
+  toggle cicla Auto/Claro/Oscuro (se guarda en `localStorage`).
+- **Auto-arranque Docker**: el contenedor usa `restart: unless-stopped`
+  (arranca al iniciar el equipo; no si lo paras a mano).
 
 ## Flujo de trabajo (Git / PR)
 
 - Commits en **español**, atómicos por funcionalidad.
 - Para cambios no triviales: **rama de feature + Pull Request + squash merge**
-  (es el flujo usado hasta ahora: `pynvml`, `persistence`).
+  (es el flujo usado hasta ahora: `pynvml`, `persistence`, `responsive`,
+  `dark-theme`, `visual-tweaks`).
 - `main` es la rama por defecto; el repo es público y con licencia **MIT**.
 
 ## Backlog

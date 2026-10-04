@@ -6,8 +6,9 @@ Ideas pendientes para `envy`. No implementadas todavía.
 
 - **Autenticación básica**: usuario/contraseña (o token) en el backend FastAPI,
   útil si se expone fuera de `localhost`.
-- **Servicio `systemd`**: unidad de usuario/sistema para arrancar `envy` al
-  inicio y reiniciarlo si falla.
+- **Servicio `systemd`** (para uso directo, sin Docker): unidad para arrancar
+  `envy` al inicio y reiniciarlo si falla. Con Docker ya arranca solo vía
+  `restart: unless-stopped`.
 - **Contenedor Docker**: ~~imagen mínima con acceso a `nvidia-smi`~~ **hecho**
   (`Dockerfile` + `docker-compose.yml`, usa `--gpus all`).
 - **Publicar imagen en GHCR** (`ghcr.io`): **pendiente**. El token actual de `gh`
@@ -55,5 +56,7 @@ Ideas pendientes para `envy`. No implementadas todavía.
   barra superior, hoy son solo texto.
 - **Tema oscuro**: ~~y respeto por `prefers-color-scheme`~~ **hecho**
   (automático según el sistema + toggle manual Auto/Claro/Oscuro).
-- **Responsive**: adaptar la tabla y las gráficas a pantallas pequeñas.
+- **Responsive**: ~~adaptar la tabla y las gráficas a pantallas pequeñas~~
+  **hecho** (breakpoint en 640px, tabla de procesos en tarjetas, gráficas
+  fluidas al tamaño del contenedor).
 - **Indicador de reconexión** más visible (tiempo desde la última muestra).

@@ -4,6 +4,7 @@ Versión web del monitor de GPU. La información proviene de **`nvidia-smi`** o 
 **NVML** (backend seleccionable, sin binarios nativos). Replica las pestañas
 **Utilization** y **Processes**, las gráficas en vivo (60 s con paso de 2 s) y
 además guarda histórico en **SQLite** para ver rangos largos (hasta 7 días).
+Incluye **tema claro/oscuro** y **diseño responsive** (escritorio y móvil).
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
@@ -58,12 +59,16 @@ En ambos casos abre `http://localhost:8000`.
 > El volumen `/data` guarda el histórico persistido. En Compose es el named
 > volume `envy-data`; sin él, el histórico se pierde al recrear el contenedor.
 
+> En Compose el contenedor usa `restart: unless-stopped`: **arranca solo** al
+> iniciar el equipo (con Docker habilitado) y al recrear el contenedor. Si lo
+> paras a mano, permanece detenido hasta que lo vuelvas a arrancar.
+
 > Requisitos para que Docker vea la GPU (driver, NVIDIA Container Toolkit,
 > `--gpus all`, capacidades): ver [`docs/docker-gpu.md`](docs/docker-gpu.md).
 
-> Los procesos que aparecen en la pestaña **Processes** dependen del PID
-> namespace: por defecto el contenedor **no** ve los procesos del host y la
-> lista sale vacía. Para verlos, añade `--pid=host` (o `pid: host` en Compose).
+> Los procesos de la pestaña **Processes** dependen del PID namespace. En
+> Compose ya está activado `pid: host`, así que se ven los procesos del host;
+> con `docker run` añade `--pid=host` (sin él la lista sale vacía).
 
 ### Variables de entorno
 
@@ -169,6 +174,9 @@ nvidia-smi / NVML ──▶ Monitor (cada 2 s) ──┬─▶ SSE /api/stream �
   + Grafana; este proyecto está pensado para una máquina.
 - Tema claro/oscuro: sigue `prefers-color-scheme` del sistema y hay un toggle
   manual (Auto / Claro / Oscuro) que se recuerda en el navegador.
+- **Responsive**: un único breakpoint en **640px** (título compacto, pestañas
+  con *wrap*, tabla de procesos en tarjetas). Las gráficas se dimensionan al
+  ancho/alto real de su contenedor, no a un tamaño fijo.
 
 ## Licencia
 
