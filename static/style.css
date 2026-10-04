@@ -179,6 +179,7 @@ main { padding: 18px 22px 40px; }
   width: 100%;
   border: 1px solid var(--line);
   background: var(--panel);
+  overflow: hidden;
 }
 .chart .u-legend { display: none; }
 

@@ -512,6 +512,17 @@ function initTheme() {
   });
 }
 
+// Ajusta el tamaño de todas las gráficas al ancho real de su contenedor.
+function sizePlots() {
+  const h = chartHeight();
+  for (const p of Object.values(state.plots)) {
+    const w1 = p.gpuEl.clientWidth;
+    if (w1 && (p.gpu.width !== w1 || p.gpu.height !== h)) p.gpu.setSize({ width: w1, height: h });
+    const w2 = p.memEl.clientWidth;
+    if (w2 && (p.mem.width !== w2 || p.mem.height !== h)) p.mem.setSize({ width: w2, height: h });
+  }
+}
+
 /* ---------------------------- pestañas --------------------------- */
 
 const rangeSelect = $("#range");
@@ -527,20 +538,17 @@ document.querySelectorAll(".tab").forEach((tab) => {
     $("#tab-processes").classList.toggle("hidden", target !== "processes");
     if (target === "utilization") {
       // uPlot necesita saber el ancho cuando el contenedor vuelve a ser visible.
-      for (const p of Object.values(state.plots)) {
-        p.gpu.setSize({ width: p.gpuEl.clientWidth, height: chartHeight() });
-        p.mem.setSize({ width: p.memEl.clientWidth, height: chartHeight() });
-      }
+      sizePlots();
     }
   });
 });
 
-window.addEventListener("resize", () => {
-  for (const p of Object.values(state.plots)) {
-    p.gpu.setSize({ width: p.gpuEl.clientWidth, height: chartHeight() });
-    p.mem.setSize({ width: p.memEl.clientWidth, height: chartHeight() });
-  }
-});
+window.addEventListener("resize", sizePlots);
+
+// Cubre cambios de ancho del contenedor que no disparan "resize" (scrollbar, etc.).
+if (window.ResizeObserver) {
+  new ResizeObserver(() => sizePlots()).observe(document.body);
+}
 
 initTheme();
 connect();
