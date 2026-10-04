@@ -169,6 +169,7 @@ function chartOptions(width) {
         stroke: accentColor(),
         width: 2,
         fill: areaFill,
+        paths: uPlot.paths.spline ? uPlot.paths.spline() : undefined,
         points: { show: false },
       },
     ],
