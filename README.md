@@ -58,6 +58,9 @@ En ambos casos abre `http://localhost:8000`.
 > El volumen `/data` guarda el histórico persistido. En Compose es el named
 > volume `envy-data`; sin él, el histórico se pierde al recrear el contenedor.
 
+> Requisitos para que Docker vea la GPU (driver, NVIDIA Container Toolkit,
+> `--gpus all`, capacidades): ver [`docs/docker-gpu.md`](docs/docker-gpu.md).
+
 > Los procesos que aparecen en la pestaña **Processes** dependen del PID
 > namespace: por defecto el contenedor **no** ve los procesos del host y la
 > lista sale vacía. Para verlos, añade `--pid=host` (o `pid: host` en Compose).
