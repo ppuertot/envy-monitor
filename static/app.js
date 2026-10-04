@@ -6,6 +6,15 @@
 
 const CHART_H = 130;
 
+// Rango -> puntos objetivo, refresco (ms) y etiqueta. `live` usa el flujo SSE.
+const RANGE_CFG = {
+  60:     { points: 30,  refresh: 0,      label: "60 s",  live: true },
+  300:    { points: 150, refresh: 15000,  label: "5 min" },
+  3600:   { points: 240, refresh: 30000,  label: "1 h" },
+  86400:  { points: 288, refresh: 60000,  label: "24 h" },
+  604800: { points: 336, refresh: 300000, label: "7 d" },
+};
+
 const state = {
   xs: [],                 // timestamps (segundos Unix) compartidos
   series: {},             // index -> {gpu:[], used:[], io:[]}
@@ -13,6 +22,13 @@ const state = {
   sig: "",
   plots: {},              // index -> {gpu, mem, gpuEl, memEl, refs}
   maxPoints: 30,
+  range: 60,
+  live: true,
+  rangeTimer: null,
+  window: 60,
+  interval: 2,
+  backend: "nvidia-smi",
+  persistence: false,
 };
 
 /* -------------------------- utilidades --------------------------- */
@@ -29,10 +45,13 @@ function pct(v) { return v === null || v === undefined ? "N/A" : `${Math.round(v
 
 function mm(arr) {
   if (!arr || !arr.length) return { min: null, avg: null, max: null };
-  let min = Infinity, max = -Infinity, sum = 0;
-  for (const v of arr) { if (v == null) continue; min = Math.min(min, v); max = Math.max(max, v); sum += v; }
-  if (min === Infinity) return { min: null, avg: null, max: null };
-  return { min, avg: sum / arr.length, max };
+  let min = Infinity, max = -Infinity, sum = 0, count = 0;
+  for (const v of arr) {
+    if (v == null) continue;
+    min = Math.min(min, v); max = Math.max(max, v); sum += v; count += 1;
+  }
+  if (count === 0) return { min: null, avg: null, max: null };
+  return { min, avg: sum / count, max };
 }
 
 function agg(arr) {
@@ -114,9 +133,9 @@ function buildGpuBlock(gpu) {
   block.className = "gpu-block";
   block.innerHTML = `
     <h2>GPU Utilization</h2>
-    <div class="chart-head"><span>${state.intervalLabel || "2 sec"} step</span></div>
+    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span></div>
     <div class="chart" id="chart-gpu-${idx}"></div>
-    <div class="chart-foot"><span>${state.windowLabel || "60 sec"}</span></div>
+    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span></div>
 
     <h3><span class="dot"></span>${gpu.name}</h3>
     <div class="stats">
@@ -129,9 +148,9 @@ function buildGpuBlock(gpu) {
     <div class="dashed"></div>
 
     <h2 style="margin-top:18px">Memory Utilization</h2>
-    <div class="chart-head"><span>${state.intervalLabel || "2 sec"} step</span></div>
+    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span></div>
     <div class="chart" id="chart-mem-${idx}"></div>
-    <div class="chart-foot"><span>${state.windowLabel || "60 sec"}</span></div>
+    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span></div>
 
     <h3><span class="dot"></span>${gpu.name}</h3>
     <div class="stats">
@@ -266,13 +285,19 @@ function showError(message) {
 }
 
 function applySnapshot(data) {
-  state.maxPoints = Math.max(2, Math.round((data.window || 60) / (data.interval || 2)));
-  state.intervalLabel = `${data.interval || 2} sec`;
-  state.windowLabel = `${Math.round(data.window || 60)} sec`;
+  state.window = data.window || 60;
+  state.interval = data.interval || 2;
+  state.intervalLabel = `${state.interval} sec`;
+  state.windowLabel = `${Math.round(state.window)} sec`;
+  state.maxPoints = Math.max(2, Math.round(state.window / state.interval));
+  state.persistence = !!data.persistence;
+  state.backend = data.backend || (data.sample && data.sample.backend) || "nvidia-smi";
 
-  state.xs = [];
-  state.series = {};
-  for (const point of data.history || []) pushPoint(point);
+  if (state.live) {
+    state.xs = [];
+    state.series = {};
+    for (const point of data.history || []) pushPoint(point);
+  }
 
   if (data.sample) {
     ensureGpuUI(data.sample.gpus || []);
@@ -280,28 +305,119 @@ function applySnapshot(data) {
     renderProcesses(data.sample.processes);
     showError(data.sample.error);
   }
-  renderCharts();
-  const backend = data.backend || (data.sample && data.sample.backend) || "nvidia-smi";
-  $("#backend").textContent = backend;
-  $("#meta").textContent = `intervalo ${state.intervalLabel} · ventana ${state.windowLabel} · ${state.maxPoints} muestras`;
+  if (state.live) renderCharts();
+  $("#backend").textContent = state.backend;
+  updateMeta();
 }
 
 function applySample(sample) {
   ensureGpuUI(sample.gpus || []);
-  if (sample.gpus && sample.gpus.length) pushPoint({
-    ts: sample.ts,
-    gpus: sample.gpus.map((g) => ({
-      index: g.index,
-      gpu: g.utilization.gpu,
-      io: g.utilization.memory,
-      used: g.memory.used,
-      total: g.memory.total,
-    })),
-  });
-  renderCharts();
+  if (state.live && sample.gpus && sample.gpus.length) {
+    pushPoint({
+      ts: sample.ts,
+      gpus: sample.gpus.map((g) => ({
+        index: g.index,
+        gpu: g.utilization.gpu,
+        io: g.utilization.memory,
+        used: g.memory.used,
+        total: g.memory.total,
+      })),
+    });
+    renderCharts();
+  }
   updateStats(sample);
   renderProcesses(sample.processes);
   showError(sample.error);
+}
+
+/* ------------------------ rango temporal ------------------------- */
+
+function updateRangeLabels(stepText, windowText) {
+  document.querySelectorAll(".step-label").forEach((el) => {
+    el.textContent = stepText ? `${stepText} step` : "";
+  });
+  document.querySelectorAll(".window-label").forEach((el) => {
+    el.textContent = windowText || "";
+  });
+}
+
+function updateMeta() {
+  const cfg = RANGE_CFG[state.range] || {};
+  const win = state.live ? (state.windowLabel || "60 sec") : (cfg.label || "");
+  const persist = state.persistence ? "" : " · sin persistencia";
+  $("#meta").textContent =
+    `rango ${win} · intervalo ${state.intervalLabel || ""} · backend ${state.backend}${persist}`;
+}
+
+function setChartsFromHistory(data, seconds) {
+  const series = data.series || {};
+  const perGpu = {};
+  const allTs = new Set();
+  for (const idx in series) {
+    const map = new Map();
+    for (const p of series[idx] || []) {
+      map.set(p.ts, p);
+      allTs.add(p.ts);
+    }
+    perGpu[idx] = map;
+  }
+  state.xs = Array.from(allTs).sort((a, b) => a - b);
+  state.series = {};
+  for (const idx in perGpu) {
+    const map = perGpu[idx];
+    const s = { gpu: [], used: [], io: [] };
+    for (const ts of state.xs) {
+      const p = map.get(ts);
+      s.gpu.push(p && p.gpu != null ? p.gpu : null);
+      s.used.push(p && p.used != null ? p.used : null);
+      s.io.push(p && p.io != null ? p.io : null);
+    }
+    state.series[idx] = s;
+  }
+  state.maxPoints = state.live
+    ? Math.max(2, Math.round(state.window / state.interval))
+    : Math.max(2, state.xs.length);
+  renderCharts();
+  const cfg = RANGE_CFG[seconds] || {};
+  updateRangeLabels(data.step ? `${Math.round(data.step)} sec` : "", cfg.label || "");
+}
+
+async function fetchHistory(seconds, points) {
+  try {
+    const res = await fetch(`/api/history?seconds=${seconds}&points=${points}`);
+    if (!res.ok) return;
+    setChartsFromHistory(await res.json(), seconds);
+  } catch (_) {
+    /* sin persistencia o red caída: se conserva lo que haya */
+  }
+}
+
+function scheduleRangeRefresh(seconds, cfg) {
+  if (!cfg.refresh) return;
+  state.rangeTimer = setTimeout(async () => {
+    await fetchHistory(seconds, cfg.points);
+    scheduleRangeRefresh(seconds, cfg);
+  }, cfg.refresh);
+}
+
+function loadRange(seconds) {
+  const cfg = RANGE_CFG[seconds] || RANGE_CFG[300];
+  state.range = seconds;
+  state.live = !!cfg.live;
+  if (state.rangeTimer) {
+    clearTimeout(state.rangeTimer);
+    state.rangeTimer = null;
+  }
+  if (state.live) {
+    state.xs = [];
+    state.series = {};
+    state.maxPoints = Math.max(2, Math.round(state.window / state.interval));
+    fetchHistory(60, cfg.points); // rellena los últimos 60 s (si hay persistencia)
+  } else {
+    fetchHistory(seconds, cfg.points);
+    scheduleRangeRefresh(seconds, cfg);
+  }
+  updateMeta();
 }
 
 /* ----------------------------- SSE ------------------------------- */
@@ -315,6 +431,11 @@ function connect() {
 }
 
 /* ---------------------------- pestañas --------------------------- */
+
+const rangeSelect = $("#range");
+if (rangeSelect) {
+  rangeSelect.addEventListener("change", (e) => loadRange(Number(e.target.value)));
+}
 
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
