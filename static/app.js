@@ -121,7 +121,7 @@ function chartOptions(width) {
   return {
     width,
     height: chartHeight(),
-    padding: [8, 10, 2, 8],
+    padding: [0, 0, 0, 0],
     legend: { show: false },
     cursor: { show: false },
     scales: {
