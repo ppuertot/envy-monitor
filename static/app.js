@@ -80,24 +80,46 @@ function shortProc(name) {
 
 /* --------------------- construcción de la UI --------------------- */
 
-function chartHeight() {
-  return window.innerWidth <= 640 ? 104 : CHART_H;
+function plotHeight(el) {
+  const h = el ? el.clientHeight : 0;
+  return Math.max(80, h || CHART_H);
 }
 
 function chartColors() {
   return document.documentElement.dataset.theme === "dark"
-    ? { tick: "#3a4150", grid: "#2a2e37", axis: "#9aa4b2", fill: "rgba(46,194,126,0.12)" }
-    : { tick: "#c9c9c9", grid: "#ececec", axis: "#6b7280", fill: "rgba(46,194,126,0.10)" };
+    ? { tick: "#3a4150", grid: "#2a2e37", axis: "#9aa4b2" }
+    : { tick: "#c9c9c9", grid: "#ececec", axis: "#6b7280" };
 }
 
-function chartOptions(width) {
-  const narrow = width < 420;
-  const axisW = narrow ? 34 : 46;
+function hexToRgb(hex) {
+  const h = String(hex).replace("#", "");
+  const v = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(v, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+// El verde sale de la variable CSS --accent (coincide con el punto de estado).
+function accentColor() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+  return v || "#2ec27e";
+}
+
+// Relleno en degradado bajo la curva, como el original.
+function areaFill(u) {
+  if (!u.bbox) return "transparent";
+  const { r, g, b } = hexToRgb(accentColor());
+  const grad = u.ctx.createLinearGradient(0, u.bbox.top, 0, u.bbox.top + u.bbox.height);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0.30)`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0.02)`);
+  return grad;
+}
+
+function chartOptions(width, height) {
   const c = chartColors();
   return {
     width,
-    height: chartHeight(),
-    padding: [8, axisW, 2, 8],
+    height,
+    padding: [0, 0, 0, 0],
     legend: { show: false },
     cursor: { show: false },
     scales: {
@@ -114,21 +136,21 @@ function chartOptions(width) {
       },
       {
         side: 1,
-        size: axisW,
-        stroke: c.axis,
-        font: "12px sans-serif",
+        size: 0,
+        stroke: c.tick,
         ticks: { show: false },
         grid: { stroke: c.grid, width: 1 },
         splits: () => [0, 25, 50, 75, 100],
-        values: (u, splits) => splits.map((s) => `${s}%`),
+        values: () => [],
       },
     ],
     series: [
       {},
       {
-        stroke: "#2ec27e",
+        stroke: accentColor(),
         width: 2,
-        fill: c.fill,
+        fill: areaFill,
+        paths: uPlot.paths.spline ? uPlot.paths.spline() : undefined,
         points: { show: false },
       },
     ],
@@ -143,7 +165,7 @@ function applyChartTheme() {
       u.axes[0].grid.stroke = c.grid;
       u.axes[1].stroke = c.axis;
       u.axes[1].grid.stroke = c.grid;
-      u.series[1].fill = c.fill;
+      u.series[1].stroke = accentColor();
       u.redraw();
     }
   }
@@ -151,7 +173,7 @@ function applyChartTheme() {
 
 function makePlot(el) {
   const width = Math.max(200, el.clientWidth || 600);
-  return new uPlot(chartOptions(width), [[], []], el);
+  return new uPlot(chartOptions(width, plotHeight(el)), [[], []], el);
 }
 
 function buildGpuBlock(gpu) {
@@ -160,9 +182,9 @@ function buildGpuBlock(gpu) {
   block.className = "gpu-block";
   block.innerHTML = `
     <h2>GPU Utilization</h2>
-    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span></div>
+    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span><span class="scale-label">100%</span></div>
     <div class="chart" id="chart-gpu-${idx}"></div>
-    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span></div>
+    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span><span class="scale-label">0%</span></div>
 
     <h3><span class="dot"></span>${gpu.name}</h3>
     <div class="stats">
@@ -175,9 +197,9 @@ function buildGpuBlock(gpu) {
     <div class="dashed"></div>
 
     <h2 style="margin-top:18px">Memory Utilization</h2>
-    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span></div>
+    <div class="chart-head"><span class="step-label">${state.intervalLabel || "2 sec"} step</span><span class="scale-label">100%</span></div>
     <div class="chart" id="chart-mem-${idx}"></div>
-    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span></div>
+    <div class="chart-foot"><span class="window-label">${state.windowLabel || "60 sec"}</span><span class="scale-label">0%</span></div>
 
     <h3><span class="dot"></span>${gpu.name}</h3>
     <div class="stats">
@@ -488,6 +510,16 @@ function initTheme() {
   });
 }
 
+// Ajusta el tamaño de todas las gráficas al ancho real de su contenedor.
+function sizePlots() {
+  for (const p of Object.values(state.plots)) {
+    const w1 = p.gpuEl.clientWidth, h1 = plotHeight(p.gpuEl);
+    if (w1 && (p.gpu.width !== w1 || p.gpu.height !== h1)) p.gpu.setSize({ width: w1, height: h1 });
+    const w2 = p.memEl.clientWidth, h2 = plotHeight(p.memEl);
+    if (w2 && (p.mem.width !== w2 || p.mem.height !== h2)) p.mem.setSize({ width: w2, height: h2 });
+  }
+}
+
 /* ---------------------------- pestañas --------------------------- */
 
 const rangeSelect = $("#range");
@@ -503,20 +535,17 @@ document.querySelectorAll(".tab").forEach((tab) => {
     $("#tab-processes").classList.toggle("hidden", target !== "processes");
     if (target === "utilization") {
       // uPlot necesita saber el ancho cuando el contenedor vuelve a ser visible.
-      for (const p of Object.values(state.plots)) {
-        p.gpu.setSize({ width: p.gpuEl.clientWidth, height: chartHeight() });
-        p.mem.setSize({ width: p.memEl.clientWidth, height: chartHeight() });
-      }
+      sizePlots();
     }
   });
 });
 
-window.addEventListener("resize", () => {
-  for (const p of Object.values(state.plots)) {
-    p.gpu.setSize({ width: p.gpuEl.clientWidth, height: chartHeight() });
-    p.mem.setSize({ width: p.memEl.clientWidth, height: chartHeight() });
-  }
-});
+window.addEventListener("resize", sizePlots);
+
+// Cubre cambios de ancho del contenedor que no disparan "resize" (scrollbar, etc.).
+if (window.ResizeObserver) {
+  new ResizeObserver(() => sizePlots()).observe(document.body);
+}
 
 initTheme();
 connect();
