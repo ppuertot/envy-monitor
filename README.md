@@ -43,18 +43,37 @@ python3 -m uvicorn app:app --host 0.0.0.0 --port 8000
 
 ### Docker
 
-```bash
-docker build -t envy .
-docker run --rm --gpus all -p 8000:8000 -v envy-data:/data envy
-```
-
-o con Docker Compose:
+**Opción A — Docker Compose (recomendado):**
 
 ```bash
 docker compose up -d --build
 ```
 
+**Opción B — `docker run` (sin `docker-compose.yml`):** equivalente a lo anterior.
+
+```bash
+# 1) construir la imagen
+docker build -t envy:latest .
+
+# 2) arrancar el contenedor
+docker run -d --name envy --gpus all --pid=host --restart unless-stopped \
+  -p 8000:8000 -v envy-data:/data \
+  -e ENVY_DB=/data/envy.db -e ENVY_INTERVAL=2 -e ENVY_WINDOW=60 -e ENVY_RETENTION_DAYS=7 \
+  envy:latest
+```
+
 En ambos casos abre `http://localhost:8000`.
+
+> Los `-e ENVY_*` son opcionales: el `Dockerfile` ya fija `ENVY_DB=/data/envy.db` y
+> el resto tiene esos mismos valores por defecto (ver *Variables de entorno*).
+> La versión mínima sería:
+> ```bash
+> docker run -d --name envy --gpus all --pid=host -p 8000:8000 \
+>   -v envy-data:/data --restart unless-stopped envy:latest
+> ```
+> El volumen `envy-data` se crea solo si no existe.
+> Para ver los procesos del host en la pestaña *Processes* hace falta `--pid=host`
+> (ya incluido arriba).
 
 > El volumen `/data` guarda el histórico persistido. En Compose es el named
 > volume `envy-data`; sin él, el histórico se pierde al recrear el contenedor.
@@ -65,10 +84,6 @@ En ambos casos abre `http://localhost:8000`.
 
 > Requisitos para que Docker vea la GPU (driver, NVIDIA Container Toolkit,
 > `--gpus all`, capacidades): ver [`docs/docker-gpu.md`](docs/docker-gpu.md).
-
-> Los procesos de la pestaña **Processes** dependen del PID namespace. En
-> Compose ya está activado `pid: host`, así que se ven los procesos del host;
-> con `docker run` añade `--pid=host` (sin él la lista sale vacía).
 
 ### Variables de entorno
 
