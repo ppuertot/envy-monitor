@@ -43,13 +43,26 @@ python3 -m uvicorn app:app --host 0.0.0.0 --port 8000
 
 ### Docker
 
+**Usar la imagen publicada** (no hace falta el código fuente ni construir nada):
+
+```bash
+docker pull ppuertot/envy-monitor:latest
+
+docker run -d --name envy --gpus all --pid=host --restart unless-stopped \
+  -p 8000:8000 -v envy-data:/data ppuertot/envy-monitor:latest
+```
+
+Imagen: [`docker.io/ppuertot/envy-monitor`](https://hub.docker.com/r/ppuertot/envy-monitor)
+
+**Construir desde el repositorio:**
+
 **Opción A — Docker Compose (recomendado):**
 
 ```bash
 docker compose up -d --build
 ```
 
-**Opción B — `docker run` (sin `docker-compose.yml`):** equivalente a lo anterior.
+**Opción B — `docker run` (sin `docker-compose.yml`):** equivalente a Compose.
 
 ```bash
 # 1) construir la imagen
@@ -62,7 +75,7 @@ docker run -d --name envy --gpus all --pid=host --restart unless-stopped \
   envy:latest
 ```
 
-En ambos casos abre `http://localhost:8000`.
+En todos los casos abre `http://localhost:8000`.
 
 > Los `-e ENVY_*` son opcionales: el `Dockerfile` ya fija `ENVY_DB=/data/envy.db` y
 > el resto tiene esos mismos valores por defecto (ver *Variables de entorno*).
@@ -84,6 +97,12 @@ En ambos casos abre `http://localhost:8000`.
 
 > Requisitos para que Docker vea la GPU (driver, NVIDIA Container Toolkit,
 > `--gpus all`, capacidades): ver [`docs/docker-gpu.md`](docs/docker-gpu.md).
+
+> **Publicar una nueva versión** (mantenedores):
+> ```bash
+> docker build -t ppuertot/envy-monitor:latest .
+> docker push ppuertot/envy-monitor:latest
+> ```
 
 ### Variables de entorno
 
