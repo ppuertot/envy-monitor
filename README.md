@@ -212,6 +212,16 @@ nvidia-smi / NVML ──▶ Monitor (cada 2 s) ──┬─▶ SSE /api/stream �
   con *wrap*, tabla de procesos en tarjetas). Las gráficas se dimensionan al
   ancho/alto real de su contenedor, no a un tamaño fijo.
 
+## Créditos
+
+La interfaz y la idea de este monitor están inspiradas en
+[**nvidia-system-monitor-qt**](https://github.com/congard/nvidia-system-monitor-qt)
+de [@congard](https://github.com/congard) ("Task Manager for Linux for Nvidia
+graphics cards", licencia MIT).
+
+`envy` es una reimplementación **web independiente**: no comparte código con ese
+proyecto; solo toma su diseño y su enfoque como referencia.
+
 ## Licencia
 
 [MIT](LICENSE) © 2026 Pedro Puerto

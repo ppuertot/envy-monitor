@@ -16,6 +16,10 @@ Principios del proyecto:
 - Mismo esquema de datos para ambos backends (el frontend no distingue).
 - Todo lo posible con la stdlib de Python.
 
+> **Crédito**: la UI y la idea están inspiradas en
+> [`congard/nvidia-system-monitor-qt`](https://github.com/congard/nvidia-system-monitor-qt)
+> (MIT). Es una reimplementación web independiente, sin código compartido.
+
 ## Estructura
 
 | Archivo | Rol |
