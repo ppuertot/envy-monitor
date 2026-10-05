@@ -1,0 +1,47 @@
+# Compose para servidores: usa la imagen publicada en Docker Hub (sin build)
+# y publica el puerto 8080 del host.
+#
+# Uso (en el servidor, en un directorio propio, p. ej. ~/envy):
+#   cp docker-compose.server.yml ~/envy/docker-compose.yml
+#   docker volume create envy-data   # solo la primera vez (volumen externo)
+#   cd ~/envy && docker compose up -d
+# Actualizar:  docker compose pull && docker compose up -d
+#
+# El volumen es `external` para reutilizar el histórico existente y para que
+# `docker compose down -v` no lo borre.
+services:
+  envy:
+    # En los servidores se usa la imagen publicada (sin build).
+    image: ppuertot/envy-monitor:latest
+    container_name: envy
+    ports:
+      - "8080:8000"
+    environment:
+      ENVY_INTERVAL: "2"
+      ENVY_WINDOW: "60"
+      ENVY_DB: /data/envy.db
+      ENVY_RETENTION_DAYS: "7"
+    volumes:
+      - envy-data:/data
+    # Docker Compose v2.30+. En versiones anteriores usa el bloque
+    # comentado al final (deploy.resources.reservations.devices).
+    gpus: all
+    restart: unless-stopped
+    # Comparte el PID namespace del host para que la pestaña Processes
+    # vea los procesos que usan la GPU.
+    pid: host
+
+# --- Alternativa si `gpus: all` no está soportado ---
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              count: all
+#              capabilities: [utility]
+
+volumes:
+  envy-data:
+    name: envy-data
+    # Volumen creado antes con docker run; se reutiliza con su histórico.
+    external: true
