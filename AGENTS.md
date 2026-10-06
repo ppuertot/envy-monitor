@@ -77,7 +77,7 @@ docker compose up -d --build
 | `ENVY_RETENTION_DAYS` | `7` | Días de histórico persistido (`0` = sin límite) |
 | `ENVY_TOKEN` | — | Token opcional para `/api/*` (cabecera o `?token=`) |
 | `ENVY_MAX_CLIENTS` | `20` | Tope de clientes SSE (`0` = sin tope) |
-| `ENVY_SHOW_CMDLINE` | — | `1` expone la línea de comandos completa |
+| `ENVY_SHOW_CMDLINE` | — (apagado) | `1` expone la línea de comandos completa |
 
 ## Verificar cambios
 
@@ -85,7 +85,7 @@ No hay suite de tests formal. Al tocar código, verifica manualmente:
 
 1. **Sintaxis**
    ```bash
-   python3 -m py_compile app.py storage.py nvidia*.py errors.py
+   python3 -m py_compile app.py storage.py nvidia*.py processes.py errors.py
    ```
 2. **Backend** (arranca en un puerto libre y consulta):
    ```bash
@@ -136,8 +136,8 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
 
 - **Selección de backend**: `nvidia.py` resuelve el backend **al importar**.
   Si pruebas forzar otro, hazlo en un proceso nuevo (`ENVY_BACKEND=... python`).
-- **NVML no da el nombre del proceso**: se lee de `/proc/<pid>/cmdline`; el
-  frontend lo acorta a basename.
+- **Nombre del proceso**: NVML no lo devuelve; se lee de `/proc/<pid>/comm`
+  (por defecto) o del `cmdline` con `ENVY_SHOW_CMDLINE=1` (ver `processes.py`).
 - **PID namespace en Docker**: sin `pid: host`, la pestaña *Processes* sale
   vacía. Ya está activado en `docker-compose.yml`.
 - **Puerto en Docker**: el contenedor escucha fijo en `8000` (`CMD` y
@@ -181,9 +181,13 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
 
 - Commits en **español**, atómicos por funcionalidad.
 - Para cambios no triviales: **rama de feature + Pull Request + squash merge**
-  (es el flujo usado hasta ahora: `pynvml`, `persistence`, `responsive`,
-  `dark-theme`, `visual-tweaks`).
-- `main` es la rama por defecto; el repo es público y con licencia **MIT**.
+  (ramas usadas: `pynvml`, `persistence`, `responsive`, `dark-theme`,
+  `visual-tweaks`, `security/minimal`, `hardening/container`,
+  `security/logs-healthz`, `robustness/fixes`, `ops/release`).
+- **`main` está protegida** (branch protection): requiere **PR** e **historial
+  lineal**, y bloquea *force-push* y borrado. No se puede `git push` directo a
+  `main`; todo va por rama + PR.
+- El repo es público y con licencia **MIT**.
 
 ## Backlog
 
