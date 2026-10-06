@@ -44,6 +44,8 @@ SELECT CAST((ts - ?) / ? AS INTEGER) AS bucket,
        AVG(mem_io)                            AS mem_io,
        AVG(temp)                              AS temp,
        AVG(power)                             AS power,
+       AVG(clk_graphics)                      AS clk_graphics,
+       AVG(clk_memory)                        AS clk_memory,
        100.0 * AVG(mem_used) / NULLIF(AVG(mem_total), 0) AS used_pct
 FROM samples
 WHERE gpu = ? AND ts >= ? AND ts <= ?
@@ -59,6 +61,8 @@ class Store:
 
     def __init__(self, path: str | Path, retention_days: float = 7.0) -> None:
         self.path = str(path)
+        # retention_days <= 0 → sin límite: se conserva todo (prune no borra nada).
+        self.retention_days = retention_days
         self.retention_seconds = max(0.0, retention_days) * 86400
         self._lock = threading.Lock()
         self._last_prune = 0.0
@@ -126,7 +130,7 @@ class Store:
             cur = self._conn.execute(_HISTORY, (start, step, gpu, start, end))
             rows = cur.fetchall()
         series: list[dict[str, Any]] = []
-        for bucket, gpu_util, mem_io, temp, power, used_pct in rows:
+        for bucket, gpu_util, mem_io, temp, power, clk_g, clk_m, used_pct in rows:
             series.append(
                 {
                     "ts": start + (bucket + 0.5) * step,
@@ -134,6 +138,8 @@ class Store:
                     "io": None if mem_io is None else round(mem_io),
                     "temp": None if temp is None else round(temp),
                     "power": None if power is None else round(power, 2),
+                    "clk_graphics": None if clk_g is None else round(clk_g),
+                    "clk_memory": None if clk_m is None else round(clk_m),
                     "used": None if used_pct is None else round(used_pct, 2),
                 }
             )

@@ -234,6 +234,8 @@ function buildGpuBlock(gpu) {
 }
 
 function ensureGpuUI(gpus) {
+  // Un fallo transitorio (gpus vacío) no debe borrar la UI ya construida.
+  if (!gpus || gpus.length === 0) return;
   const sig = gpus.map((g) => g.index).join(",");
   if (sig === state.sig) return;
   state.sig = sig;

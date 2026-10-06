@@ -133,7 +133,7 @@ En todos los casos abre `http://localhost:8000`.
 | `ENVY_WINDOW`   | `60`        | Segundos de histórico en memoria (gráfica en vivo). |
 | `ENVY_BACKEND`  | `auto`      | Backend de datos: `auto`, `nvml` o `smi`. |
 | `ENVY_DB`       | `./envy.db` | Ruta del archivo SQLite del histórico.   |
-| `ENVY_RETENTION_DAYS` | `7`   | Días de histórico persistido (poda horaria). |
+| `ENVY_RETENTION_DAYS` | `7`   | Días de histórico persistido (poda horaria); `0` = **sin límite**. |
 | `ENVY_TOKEN`    | —           | Token opcional para proteger `/api/*` (ver *Seguridad*). |
 | `ENVY_MAX_CLIENTS` | `20`     | Tope de clientes SSE simultáneos (`0` = sin tope). |
 | `ENVY_SHOW_CMDLINE` | —       | `1` expone la línea de comandos completa de los procesos. |
@@ -170,6 +170,9 @@ devolver millones de puntos.
 
 - Ruta del archivo: `ENVY_DB` (por defecto `./envy.db`).
 - Retención: `ENVY_RETENTION_DAYS` días (por defecto 7); se poda una vez por hora.
+  Con `0` **no se borra nada** (se conserva todo el histórico).
+- Cada punto de `/api/history` incluye `gpu`, `io`, `temp`, `power`,
+  `clk_graphics`, `clk_memory` y `used` (VRAM usada en %).
 - En Docker vive en el volumen `/data` (`envy-data` en Compose).
 - Si no hay persistencia, `/api/history` devuelve series vacías y la web sigue
   funcionando en modo en vivo.

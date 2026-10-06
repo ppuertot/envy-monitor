@@ -10,7 +10,7 @@ Variables de entorno:
     ENVY_INTERVAL         segundos entre muestras (por defecto 2)
     ENVY_WINDOW           segundos de histórico en memoria (por defecto 60)
     ENVY_DB               ruta del SQLite (por defecto ./envy.db)
-    ENVY_RETENTION_DAYS   días de histórico persistido (por defecto 7)
+    ENVY_RETENTION_DAYS   días de histórico persistido (por defecto 7; 0 = sin límite)
     ENVY_TOKEN            token opcional para /api/* (por defecto: sin auth)
     ENVY_MAX_CLIENTS      tope de clientes SSE (por defecto 20; 0 = sin tope)
     ENVY_SHOW_CMDLINE     exponer la línea de comandos completa (1 lo activa)
@@ -108,6 +108,7 @@ class Monitor:
             self.error = None
         except Exception as exc:  # noqa: BLE001 — queremos mostrar cualquier fallo
             gpus = []
+            self.processes = []  # no mostrar procesos obsoletos del muestreo anterior
             self.error = str(exc)
 
         self._tick += 1
@@ -178,6 +179,10 @@ monitor = Monitor(INTERVAL, WINDOW)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     _install_access_log_filter()
+    logging.getLogger("uvicorn.error").info(
+        "envy: backend=%s interval=%ss window=%ss db=%s retention=%sd auth=%s",
+        BACKEND, INTERVAL, WINDOW, DB_PATH, RETENTION_DAYS, TOKEN is not None,
+    )
     monitor.store = Store(DB_PATH, RETENTION_DAYS)
     task = asyncio.create_task(monitor.run())
     try:
@@ -242,7 +247,10 @@ async def api_history(
     Si se omite `gpu`, devuelve una serie por cada GPU del rango.
     """
     now = time.time()
-    start = now - max(1.0, seconds)
+    # Acota el rango a la retención (evita pedir "todo" siempre).
+    max_seconds = RETENTION_DAYS * 86400 if RETENTION_DAYS > 0 else 30 * 86400
+    seconds = max(1.0, min(seconds, max_seconds))
+    start = now - seconds
     points = max(2, min(points, 3000))
     step = max(1.0, (now - start) / points)
 
