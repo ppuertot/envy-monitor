@@ -36,6 +36,7 @@ Principios del proyecto:
 | `docker-compose.server.yml` | Servidores: imagen publicada, puerto 8080, volumen `envy-data` externo |
 | `run.sh` | Arranque directo (acepta puerto como argumento) |
 | `VERSION` | Versión actual (semver); se usa para los tags de imagen |
+| `.github/workflows/release.yml` | CI: al tag `vX.Y.Z` construye, escanea (Trivy) y publica en Docker Hub |
 | `README.md`, `SUGERENCIAS.md`, `docs/docker-gpu.md` | Documentación |
 | `LICENSE` | Licencia MIT |
 
@@ -174,8 +175,11 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
 - En servidores, `docker-compose.server.yml` usa
   `ppuertot/envy-monitor:${ENVY_TAG:-0.1.0}`; fija `ENVY_TAG` en `.env` para que
   todos usen la misma versión.
-- **Release manual**: sube `VERSION`, construye y publica ese tag en Docker Hub
-  (y `latest`). Opcionalmente etiqueta el commit con `vX.Y.Z`.
+- **Release**: subir `VERSION`, crear el tag `vX.Y.Z` y `git push origin vX.Y.Z`.
+  El workflow `.github/workflows/release.yml` construye, escanea con Trivy y
+  publica `X.Y.Z` (+ `latest`) en Docker Hub. Requiere los secretos
+  `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN`. Alternativa manual: `docker build` +
+  `docker push` del tag.
 
 ## Flujo de trabajo (Git / PR)
 
