@@ -238,6 +238,24 @@ o el token de abajo.
 - **`pid: host`** es necesario para resolver los nombres vía `/proc/<pid>`; es la
   concesión más grande del contenedor.
 
+### Cómo establecer el token
+
+Genera uno fuerte:
+
+```bash
+openssl rand -hex 32
+```
+
+- **Directo (Python):** `ENVY_TOKEN="mi-token" ./run.sh`
+- **`docker run`:** añade `-e ENVY_TOKEN="mi-token"`.
+- **Docker Compose:** define `ENVY_TOKEN=mi-token` en un archivo **`.env`** junto
+  al compose (está en `.gitignore`, no se sube al repo); el compose ya lo lee con
+  `ENVY_TOKEN: "${ENVY_TOKEN:-}"`.
+- **Servidores** (`docker-compose.server.yml`): igual, vía `.env`.
+
+Después abre la web **una vez** con `http://host:8080/?token=mi-token`; el token
+queda guardado en el navegador. Sin `ENVY_TOKEN`, no hay autenticación.
+
 Si no quieres publicar el puerto, usa `-p 127.0.0.1:8000:8000` y accede por
 **túnel SSH** en lugar de exponerlo a la red.
 
