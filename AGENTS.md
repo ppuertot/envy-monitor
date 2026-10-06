@@ -24,7 +24,7 @@ Principios del proyecto:
 
 | Archivo | Rol |
 |---|---|
-| `app.py` | FastAPI: `Monitor`, SSE `/api/stream`, `/api/snapshot`, `/api/history` |
+| `app.py` | FastAPI: `Monitor`, SSE `/api/stream`, `/api/snapshot`, `/api/history`, `/healthz` |
 | `nvidia.py` | Selector de backend según `ENVY_BACKEND` (`auto`/`nvml`/`smi`) |
 | `nvidia_smi.py` | Backend que invoca `nvidia-smi` como subproceso |
 | `nvidia_nvml.py` | Backend NVML (`nvidia-ml-py` / `pynvml`) |
@@ -161,6 +161,10 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
   (root): `docker run --rm -v envy-data:/data alpine chown -R 10001:10001 /data`.
   Los compose añaden `read_only`, `cap_drop: [ALL]`, `no-new-privileges` y
   `tmpfs: /tmp`.
+- **Logs y `/healthz`**: un filtro sobre `uvicorn.access` omite `/static`,
+  `/favicon.ico` y `/healthz`, y redacta el `?token=` (`token=***`). `/healthz`
+  (sin auth) responde `503` si la última muestra tiene más de 3 intervalos; lo
+  usa el `HEALTHCHECK` del contenedor.
 
 ## Flujo de trabajo (Git / PR)
 

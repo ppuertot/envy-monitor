@@ -209,6 +209,7 @@ nvidia-smi / NVML ──▶ Monitor (cada 2 s) ──┬─▶ SSE /api/stream �
 | `GET /api/snapshot` | Estado actual + histórico en memoria (JSON). |
 | `GET /api/stream`   | Flujo SSE: `snapshot` inicial + `sample`s. |
 | `GET /api/history`  | Histórico reesampleado (`seconds`, `points`, `gpu`). |
+| `GET /healthz`      | Salud (sin auth): `ok` con la antigüedad de la última muestra, `503` si está vieja. |
 
 ## Mapeo a nvidia-smi
 
@@ -243,6 +244,9 @@ o el token de abajo.
   comandos completa** (puede filtrar argumentos de otros programas).
 - **`pid: host`** es necesario para resolver los nombres vía `/proc/<pid>`; es la
   concesión más grande del contenedor.
+- **Logs**: el *access log* de uvicorn **no** registra `/static`, `/healthz` ni el
+  `?token=` (se muestra como `token=***`). El `HEALTHCHECK` del contenedor usa
+  `/healthz` (sin token).
 
 ### Cómo establecer el token
 

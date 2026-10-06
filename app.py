@@ -21,7 +21,9 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import logging
 import os
+import re
 import secrets
 import time
 from collections import deque
@@ -46,6 +48,33 @@ RETENTION_DAYS = float(os.environ.get("ENVY_RETENTION_DAYS", "7"))
 TOKEN = (os.environ.get("ENVY_TOKEN") or "").strip() or None
 _MAX = os.environ.get("ENVY_MAX_CLIENTS", "20").strip()
 MAX_CLIENTS = int(_MAX) if _MAX.isdigit() else 20  # 0 = sin tope
+
+# Rutas que no se registran en el access log (ruido y healthcheck).
+_QUIET_PATHS = ("/static/", "/favicon.ico", "/healthz")
+_TOKEN_RE = re.compile(r"([?&]token=)[^&\s]*")
+
+
+class _AccessLogFilter(logging.Filter):
+    """Quita ruido y evita registrar el token del query string."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args if isinstance(record.args, tuple) else ()
+        path = next(
+            (a for a in args if isinstance(a, str) and a.startswith("/")), None
+        )
+        if path is not None:
+            if path.startswith(_QUIET_PATHS):
+                return False
+            if "token=" in path:
+                record.args = tuple(
+                    _TOKEN_RE.sub(r"\1***", a) if isinstance(a, str) else a
+                    for a in args
+                )
+        return True
+
+
+def _install_access_log_filter() -> None:
+    logging.getLogger("uvicorn.access").addFilter(_AccessLogFilter())
 
 
 class Monitor:
@@ -148,6 +177,7 @@ monitor = Monitor(INTERVAL, WINDOW)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    _install_access_log_filter()
     monitor.store = Store(DB_PATH, RETENTION_DAYS)
     task = asyncio.create_task(monitor.run())
     try:
@@ -177,6 +207,25 @@ async def _auth(request: Request, call_next):
 
 def _sse(event: str, data: Any) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+@app.get("/healthz")
+async def healthz() -> JSONResponse:
+    """Chequeo de salud sin auth: 503 si la última muestra es vieja."""
+    latest = monitor.latest
+    if latest is None:
+        return JSONResponse({"status": "starting"}, status_code=503)
+    age = time.time() - float(latest["ts"])
+    limit = max(5.0, monitor.interval * 3)
+    ok = age <= limit
+    return JSONResponse(
+        {
+            "status": "ok" if ok else "stale",
+            "age": round(age, 1),
+            "backend": BACKEND,
+        },
+        status_code=200 if ok else 503,
+    )
 
 
 @app.get("/api/snapshot")
