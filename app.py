@@ -11,6 +11,9 @@ Variables de entorno:
     ENVY_WINDOW           segundos de histórico en memoria (por defecto 60)
     ENVY_DB               ruta del SQLite (por defecto ./envy.db)
     ENVY_RETENTION_DAYS   días de histórico persistido (por defecto 7)
+    ENVY_TOKEN            token opcional para /api/* (por defecto: sin auth)
+    ENVY_MAX_CLIENTS      tope de clientes SSE (por defecto 20; 0 = sin tope)
+    ENVY_SHOW_CMDLINE     exponer la línea de comandos completa (1 lo activa)
 """
 
 from __future__ import annotations
@@ -19,6 +22,7 @@ import asyncio
 import contextlib
 import json
 import os
+import secrets
 import time
 from collections import deque
 from contextlib import asynccontextmanager
@@ -26,7 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from nvidia import BACKEND, query_gpus, query_processes
@@ -39,6 +43,9 @@ INTERVAL = float(os.environ.get("ENVY_INTERVAL", "2"))
 WINDOW = float(os.environ.get("ENVY_WINDOW", "60"))
 DB_PATH = os.environ.get("ENVY_DB", str(BASE_DIR / "envy.db"))
 RETENTION_DAYS = float(os.environ.get("ENVY_RETENTION_DAYS", "7"))
+TOKEN = (os.environ.get("ENVY_TOKEN") or "").strip() or None
+_MAX = os.environ.get("ENVY_MAX_CLIENTS", "20").strip()
+MAX_CLIENTS = int(_MAX) if _MAX.isdigit() else 20  # 0 = sin tope
 
 
 class Monitor:
@@ -132,6 +139,7 @@ class Monitor:
             "backend": BACKEND,
             "persistence": self.store is not None,
             "retention_days": RETENTION_DAYS,
+            "auth": TOKEN is not None,
         }
 
 
@@ -152,6 +160,19 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="envy", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def _auth(request: Request, call_next):
+    """Si ENVY_TOKEN está definido, protege /api/* (cabecera o ?token=)."""
+    if TOKEN and request.url.path.startswith("/api/"):
+        header = request.headers.get("authorization", "")
+        supplied = header[7:].strip() if header[:7].lower() == "bearer " else ""
+        if not supplied:
+            supplied = request.query_params.get("token", "")
+        if not supplied or not secrets.compare_digest(supplied, TOKEN):
+            return JSONResponse({"error": "no autorizado"}, status_code=401)
+    return await call_next(request)
 
 
 def _sse(event: str, data: Any) -> str:
@@ -191,7 +212,12 @@ async def api_history(
 
 
 @app.get("/api/stream")
-async def api_stream(request: Request) -> StreamingResponse:
+async def api_stream(request: Request):
+    if MAX_CLIENTS and len(monitor.subscribers) >= MAX_CLIENTS:
+        return JSONResponse(
+            {"error": "demasiados clientes"}, status_code=503
+        )
+
     async def generator():
         queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=64)
         monitor.subscribers.add(queue)

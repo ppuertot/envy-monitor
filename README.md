@@ -134,6 +134,9 @@ En todos los casos abre `http://localhost:8000`.
 | `ENVY_BACKEND`  | `auto`      | Backend de datos: `auto`, `nvml` o `smi`. |
 | `ENVY_DB`       | `./envy.db` | Ruta del archivo SQLite del histórico.   |
 | `ENVY_RETENTION_DAYS` | `7`   | Días de histórico persistido (poda horaria). |
+| `ENVY_TOKEN`    | —           | Token opcional para proteger `/api/*` (ver *Seguridad*). |
+| `ENVY_MAX_CLIENTS` | `20`     | Tope de clientes SSE simultáneos (`0` = sin tope). |
+| `ENVY_SHOW_CMDLINE` | —       | `1` expone la línea de comandos completa de los procesos. |
 
 ### Backends de datos
 
@@ -153,8 +156,9 @@ datos (el frontend no cambia):
 
 El backend activo aparece en el pie de la web ("Datos: …") y en `/api/snapshot`.
 
-> En NVML el nombre del proceso se obtiene de `/proc/<pid>/cmdline` (la API
-> estándar no lo incluye); por eso puede venir completo y el frontend lo acorta.
+> El nombre del proceso se lee de `/proc/<pid>`. Por defecto se expone **solo el
+> ejecutable** (`comm`); con `ENVY_SHOW_CMDLINE=1` se devuelve la línea de
+> comandos completa (el frontend la acorta a *basename*).
 
 ## Persistencia del histórico
 
@@ -219,6 +223,47 @@ nvidia-smi / NVML ──▶ Monitor (cada 2 s) ──┬─▶ SSE /api/stream �
 | Mem · IO Utilization      | `utilization.memory`          |
 | Mem · Frequency           | `clocks.current.memory`       |
 | `(mín / med / máx)`       | calculado sobre la ventana    |
+
+## Seguridad
+
+Pensado para **red interna o VPN**: el puerto publica la web **sin cifrado**, así
+que **no lo expongas a Internet** sin añadir autenticación delante (proxy inverso)
+o el token de abajo.
+
+- **`ENVY_TOKEN` (opcional).** Si se define, protege `/api/*`. Se acepta en la
+  cabecera `Authorization: Bearer <token>` o como `?token=<token>` (necesario
+  para `EventSource`). Abre la web una vez con
+  `http://host:8080/?token=<token>` y queda guardado en el navegador
+  (`localStorage`) para las siguientes visitas. Sin definir, no hay auth
+  (comportamiento anterior).
+- **`ENVY_MAX_CLIENTS`** (por defecto `20`, `0` = sin tope): limita las
+  conexiones **SSE** simultáneas.
+- **`ENVY_SHOW_CMDLINE`** (por defecto apagado): por defecto el API solo expone
+  el **nombre del ejecutable** de cada proceso; con `=1` expone la **línea de
+  comandos completa** (puede filtrar argumentos de otros programas).
+- **`pid: host`** es necesario para resolver los nombres vía `/proc/<pid>`; es la
+  concesión más grande del contenedor.
+
+### Cómo establecer el token
+
+Genera uno fuerte:
+
+```bash
+openssl rand -hex 32
+```
+
+- **Directo (Python):** `ENVY_TOKEN="mi-token" ./run.sh`
+- **`docker run`:** añade `-e ENVY_TOKEN="mi-token"`.
+- **Docker Compose:** define `ENVY_TOKEN=mi-token` en un archivo **`.env`** junto
+  al compose (está en `.gitignore`, no se sube al repo); el compose ya lo lee con
+  `ENVY_TOKEN: "${ENVY_TOKEN:-}"`.
+- **Servidores** (`docker-compose.server.yml`): igual, vía `.env`.
+
+Después abre la web **una vez** con `http://host:8080/?token=mi-token`; el token
+queda guardado en el navegador. Sin `ENVY_TOKEN`, no hay autenticación.
+
+Si no quieres publicar el puerto, usa `-p 127.0.0.1:8000:8000` y accede por
+**túnel SSH** en lugar de exponerlo a la red.
 
 ## Notas
 

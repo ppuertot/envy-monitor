@@ -29,6 +29,7 @@ Principios del proyecto:
 | `nvidia_smi.py` | Backend que invoca `nvidia-smi` como subproceso |
 | `nvidia_nvml.py` | Backend NVML (`nvidia-ml-py` / `pynvml`) |
 | `errors.py` | `MonitorBackendError` común |
+| `processes.py` | Nombre de proceso según `ENVY_SHOW_CMDLINE` (`comm` por defecto) |
 | `storage.py` | Histórico en SQLite (WAL), reesampleado y poda por retención |
 | `static/` | Frontend sin build: `index.html`, `app.js`, `style.css`, `vendor/` (uPlot) |
 | `Dockerfile`, `docker-compose.yml` | Ejecución en contenedor |
@@ -73,6 +74,9 @@ docker compose up -d --build
 | `ENVY_BACKEND` | `auto` | `auto` \| `nvml` \| `smi` |
 | `ENVY_DB` | `./envy.db` | Ruta del SQLite |
 | `ENVY_RETENTION_DAYS` | `7` | Días de histórico persistido |
+| `ENVY_TOKEN` | — | Token opcional para `/api/*` (cabecera o `?token=`) |
+| `ENVY_MAX_CLIENTS` | `20` | Tope de clientes SSE (`0` = sin tope) |
+| `ENVY_SHOW_CMDLINE` | — | `1` expone la línea de comandos completa |
 
 ## Verificar cambios
 
@@ -142,6 +146,11 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
 - **uPlot**: si actualizas la versión, reemplaza los archivos de `static/vendor/`
   (no uses CDN). Las gráficas usan `paths.spline()` para la curva suave y el
   verde sale de la variable CSS `--accent`.
+- **Seguridad/auth**: `ENVY_TOKEN` (opcional) se comprueba en un middleware para
+  `/api/*`; acepta `Authorization: Bearer` o `?token=` (EventSource no manda
+  cabeceras). El frontend toma el token de `?token=…` y lo guarda en
+  `localStorage`. `ENVY_SHOW_CMDLINE` controla si se expone `cmdline` o solo
+  `comm` (por defecto `comm`).
 - **Tema**: el tema efectivo vive en `document.documentElement.dataset.theme`
   (`light`/`dark`); un script en `<head>` lo resuelve antes de pintar y el
   toggle cicla Auto/Claro/Oscuro (se guarda en `localStorage`).
