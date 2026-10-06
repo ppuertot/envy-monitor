@@ -4,8 +4,15 @@ Ideas pendientes para `envy`. No implementadas todavía.
 
 ## Despliegue / operación
 
-- **Autenticación básica**: usuario/contraseña (o token) en el backend FastAPI,
-  útil si se expone fuera de `localhost`.
+- **Autenticación por token**: ~~usuario/contraseña (o token) en el backend~~
+  **hecho** (`ENVY_TOKEN` opcional para `/api/*`; cabecera `Authorization: Bearer`
+  o `?token=`, y el frontend lo recuerda en `localStorage`). Pendiente solo si
+  algún día se expone a Internet: proxy inverso con TLS y/o usuario/contraseña.
+- **Tope de clientes SSE**: **hecho** (`ENVY_MAX_CLIENTS`, por defecto 20).
+- **No exponer `cmdline`**: **hecho** (por defecto solo se expone `comm`;
+  `ENVY_SHOW_CMDLINE=1` lo activa).
+- **Contenedor sin root + hardening** (`cap_drop`, `read_only`, `tmpfs`):
+  pendiente (requiere migrar el volumen con `chown`).
 - **Servicio `systemd`** (para uso directo, sin Docker): unidad para arrancar
   `envy` al inicio y reiniciarlo si falla. Con Docker ya arranca solo vía
   `restart: unless-stopped`.

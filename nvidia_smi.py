@@ -13,6 +13,7 @@ import subprocess
 from typing import Any
 
 from errors import MonitorBackendError as NvidiaSmiError
+from processes import proc_name
 
 
 # Campos que pedimos a nvidia-smi. El orden importa: se mapea 1:1 con las
@@ -171,7 +172,7 @@ def query_processes() -> list[dict[str, Any]]:
                 "gpu": int(gpu),
                 "pid": int(pid),
                 "type": ptype,
-                "name": name.strip(),
+                "name": proc_name(int(pid), fallback=name.strip()),
                 "memory": int(mem),
             }
         )

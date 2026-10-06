@@ -22,6 +22,7 @@ except ImportError as exc:  # pragma: no cover - depende del entorno
     ) from exc
 
 from errors import MonitorBackendError as NvmlError
+from processes import proc_name
 
 _BYTES_PER_MIB = 1024 * 1024
 
@@ -62,27 +63,6 @@ def _mib(nbytes: int | None) -> int | None:
     if nbytes is None:
         return None
     return round(nbytes / _BYTES_PER_MIB)
-
-
-def _proc_name(pid: int) -> str:
-    """NVML no devuelve el nombre del proceso: lo leemos de /proc."""
-    try:
-        with open(f"/proc/{pid}/cmdline", "rb") as fh:
-            raw = fh.read()
-        if raw:
-            cmd = raw.replace(b"\x00", b" ").strip().decode("utf-8", "replace")
-            if cmd:
-                return cmd
-    except OSError:
-        pass
-    try:
-        with open(f"/proc/{pid}/comm", "r", encoding="utf-8", errors="replace") as fh:
-            comm = fh.read().strip()
-        if comm:
-            return comm
-    except OSError:
-        pass
-    return f"pid {pid}"
 
 
 def _device(handle, index: int, driver: str) -> dict[str, Any]:
@@ -192,7 +172,7 @@ def query_processes() -> list[dict[str, Any]]:
                         "gpu": index,
                         "pid": pid,
                         "type": "",
-                        "name": _proc_name(pid),
+                        "name": proc_name(pid),
                         "memory": 0,
                     }
                     entries[(index, pid)] = entry
