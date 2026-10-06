@@ -21,6 +21,10 @@ services:
       ENVY_WINDOW: "60"
       ENVY_DB: /data/envy.db
       ENVY_RETENTION_DAYS: "7"
+      # Seguridad (opcionales): ver README → Seguridad
+      # ENVY_TOKEN: "cambia-este-token"
+      # ENVY_MAX_CLIENTS: "20"
+      # ENVY_SHOW_CMDLINE: "0"
     volumes:
       - envy-data:/data
     # Docker Compose v2.30+. En versiones anteriores usa el bloque

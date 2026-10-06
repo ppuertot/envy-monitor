@@ -35,6 +35,25 @@ const state = {
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
+/* ---------------------- autenticación (token) -------------------- */
+// El token se toma de ?token=… (y se guarda), o de localStorage.
+const TOKEN_KEY = "envy-token";
+const AUTH_TOKEN = (() => {
+  try {
+    const t = new URLSearchParams(location.search).get("token");
+    if (t) { localStorage.setItem(TOKEN_KEY, t); return t; }
+    return localStorage.getItem(TOKEN_KEY) || "";
+  } catch (e) { return ""; }
+})();
+let authProbed = false;
+
+function tokenQuery() {
+  return AUTH_TOKEN ? `?token=${encodeURIComponent(AUTH_TOKEN)}` : "";
+}
+function authHeaders() {
+  return AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {};
+}
+
 function fmt(v, unit = "", digits = 0) {
   if (v === null || v === undefined || Number.isNaN(v)) return "N/A";
   const n = digits > 0 ? Number(v).toFixed(digits) : Math.round(v);
@@ -433,7 +452,9 @@ function setChartsFromHistory(data, seconds) {
 
 async function fetchHistory(seconds, points) {
   try {
-    const res = await fetch(`/api/history?seconds=${seconds}&points=${points}`);
+    const params = new URLSearchParams({ seconds, points });
+    if (AUTH_TOKEN) params.set("token", AUTH_TOKEN);
+    const res = await fetch(`/api/history?${params}`, { headers: authHeaders() });
     if (!res.ok) return;
     setChartsFromHistory(await res.json(), seconds);
   } catch (_) {
@@ -473,10 +494,22 @@ function loadRange(seconds) {
 
 function connect() {
   setStatus("connecting", "Conectando…");
-  const es = new EventSource("/api/stream");
+  const es = new EventSource("/api/stream" + tokenQuery());
   es.addEventListener("snapshot", (e) => applySnapshot(JSON.parse(e.data)));
   es.addEventListener("sample", (e) => applySample(JSON.parse(e.data)));
-  es.onerror = () => setStatus("connecting", "Reconectando…");
+  es.onerror = async () => {
+    setStatus("connecting", "Reconectando…");
+    // EventSource no expone el código HTTP: sondeamos una vez por si es 401.
+    if (!authProbed) {
+      authProbed = true;
+      try {
+        const res = await fetch("/api/snapshot" + tokenQuery(), { headers: authHeaders() });
+        if (res.status === 401) {
+          showError("No autorizado: falta el token o es incorrecto (abre la URL con ?token=…).");
+        }
+      } catch (_) { /* red caída */ }
+    }
+  };
 }
 
 /* ----------------------------- tema ------------------------------ */
