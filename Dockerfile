@@ -15,10 +15,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py nvidia.py nvidia_smi.py nvidia_nvml.py errors.py storage.py ./
 COPY static ./static
 
+# Usuario sin privilegios y directorio de datos
+RUN useradd --system --uid 10001 --home-dir /app --shell /usr/sbin/nologin envy \
+    && mkdir -p /data \
+    && chown -R envy:envy /app /data
+
 # Histórico persistido (montar un volumen en /data para que sobreviva)
 ENV ENVY_DB=/data/envy.db
-RUN mkdir -p /data
 VOLUME ["/data"]
+
+USER envy
 
 EXPOSE 8000
 

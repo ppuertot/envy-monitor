@@ -147,6 +147,11 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
   toggle cicla Auto/Claro/Oscuro (se guarda en `localStorage`).
 - **Auto-arranque Docker**: el contenedor usa `restart: unless-stopped`
   (arranca al iniciar el equipo; no si lo paras a mano).
+- **Contenedor sin root**: la imagen corre como uid **`10001`**; el volumen
+  `/data` debe pertenecer a ese usuario. Al migrar desde una imagen anterior
+  (root): `docker run --rm -v envy-data:/data alpine chown -R 10001:10001 /data`.
+  Los compose añaden `read_only`, `cap_drop: [ALL]`, `no-new-privileges` y
+  `tmpfs: /tmp`.
 
 ## Flujo de trabajo (Git / PR)
 

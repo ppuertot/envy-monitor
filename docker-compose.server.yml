@@ -30,6 +30,14 @@ services:
     # Comparte el PID namespace del host para que la pestaña Processes
     # vea los procesos que usan la GPU.
     pid: host
+    # Endurecimiento del contenedor
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
 # --- Alternativa si `gpus: all` no está soportado ---
 #    deploy:

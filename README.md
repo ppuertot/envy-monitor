@@ -106,6 +106,12 @@ En todos los casos abre `http://localhost:8000`.
 > El volumen `/data` guarda el histórico persistido. En Compose es el named
 > volume `envy-data`; sin él, el histórico se pierde al recrear el contenedor.
 
+> La imagen corre como usuario **sin root** (`10001`) y los compose añaden
+> `read_only`, `cap_drop: [ALL]`, `no-new-privileges` y `tmpfs: /tmp`. Al
+> actualizar desde una imagen anterior, el volumen lo creó `root`: dale permisos
+> **una vez** con
+> `docker run --rm -v envy-data:/data alpine chown -R 10001:10001 /data`.
+
 > En Compose el contenedor usa `restart: unless-stopped`: **arranca solo** al
 > iniciar el equipo (con Docker habilitado) y al recrear el contenedor. Si lo
 > paras a mano, permanece detenido hasta que lo vuelvas a arrancar.
