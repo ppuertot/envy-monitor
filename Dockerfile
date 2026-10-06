@@ -12,7 +12,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py nvidia.py nvidia_smi.py nvidia_nvml.py errors.py storage.py ./
+COPY app.py nvidia.py nvidia_smi.py nvidia_nvml.py errors.py processes.py storage.py ./
 COPY static ./static
 
 # Histórico persistido (montar un volumen en /data para que sobreviva)
