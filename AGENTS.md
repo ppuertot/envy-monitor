@@ -30,7 +30,7 @@ Principios del proyecto:
 | `nvidia_nvml.py` | Backend NVML (`nvidia-ml-py` / `pynvml`) |
 | `errors.py` | `MonitorBackendError` común |
 | `processes.py` | Nombre de proceso según `ENVY_SHOW_CMDLINE` (`comm` por defecto) |
-| `storage.py` | Histórico en SQLite (WAL), reesampleado y poda por retención |
+| `storage.py` | Histórico en SQLite (WAL), reesampleado (`gpu`, `io`, `temp`, `power`, `clk_*`, `used`) y poda por retención |
 | `static/` | Frontend sin build: `index.html`, `app.js`, `style.css`, `vendor/` (uPlot) |
 | `Dockerfile`, `docker-compose.yml` | Ejecución en contenedor |
 | `docker-compose.server.yml` | Servidores: imagen publicada, puerto 8080, volumen `envy-data` externo |
@@ -73,7 +73,7 @@ docker compose up -d --build
 | `ENVY_WINDOW` | `60` | Segundos de histórico en memoria |
 | `ENVY_BACKEND` | `auto` | `auto` \| `nvml` \| `smi` |
 | `ENVY_DB` | `./envy.db` | Ruta del SQLite |
-| `ENVY_RETENTION_DAYS` | `7` | Días de histórico persistido |
+| `ENVY_RETENTION_DAYS` | `7` | Días de histórico persistido (`0` = sin límite) |
 | `ENVY_TOKEN` | — | Token opcional para `/api/*` (cabecera o `?token=`) |
 | `ENVY_MAX_CLIENTS` | `20` | Tope de clientes SSE (`0` = sin tope) |
 | `ENVY_SHOW_CMDLINE` | — | `1` expone la línea de comandos completa |
