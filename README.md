@@ -129,16 +129,23 @@ En todos los casos abre `http://localhost:8000`.
 > Requisitos para que Docker vea la GPU (driver, NVIDIA Container Toolkit,
 > `--gpus all`, capacidades): ver [`docs/docker-gpu.md`](docs/docker-gpu.md).
 
-> **Publicar una versión** (mantenedores): sube el número en `VERSION` y publica
-> la imagen con ese tag (y `latest`):
+> **Publicar una versión** (mantenedores): con CI, sube `VERSION` y crea el tag;
+> el workflow lo detecta y publica solo:
 > ```bash
-> ver=$(cat VERSION)                      # p. ej. 0.2.0
+> ver=$(cat VERSION)                 # p. ej. 0.2.0
+> git tag "v$ver" && git push origin "v$ver"
+> ```
+> Eso dispara [`.github/workflows/release.yml`](.github/workflows/release.yml),
+> que construye, **escanea con Trivy** y publica `ppuertot/envy-monitor:X.Y.Z`
+> (+ `latest`) en Docker Hub. Requiere los secretos `DOCKERHUB_USERNAME` y
+> `DOCKERHUB_TOKEN` en el repo.
+>
+> Alternativa **manual** (sin CI):
+> ```bash
 > docker build -t ppuertot/envy-monitor:$ver .
-> docker tag ppuertot/envy-monitor:$ver ppuertot/envy-monitor:latest
 > docker push ppuertot/envy-monitor:$ver
 > docker push ppuertot/envy-monitor:latest
 > ```
-> Opcional: etiquetar el commit (`git tag v$ver && git push origin v$ver`).
 
 ### Variables de entorno
 
