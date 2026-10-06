@@ -31,6 +31,14 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    # Límites de recursos y rotación de logs
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 # --- Alternativa si `gpus: all` no está soportado ---
 #    deploy:

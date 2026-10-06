@@ -65,9 +65,15 @@ mkdir -p ~/envy && cp docker-compose.server.yml ~/envy/docker-compose.yml
 docker volume create envy-data      # solo la primera vez
 cd ~/envy && docker compose up -d   # abre http://<servidor>:8080
 
-# actualizar a la última imagen
+# actualizar a una versión concreta (recomendado: fijar ENVY_TAG en .env)
 docker compose pull && docker compose up -d
 ```
+
+> La imagen se referencia como `ppuertot/envy-monitor:${ENVY_TAG:-0.1.0}`. Fija
+> `ENVY_TAG` en un `.env` (p. ej. `ENVY_TAG=0.1.0`) para que **todos los
+> servidores usen la misma versión**, y súbela al actualizar. El compose aplica
+> además `mem_limit: 256m`, `cpus: 0.5` y rotación de logs (`max-size: 10m`,
+> `max-file: 3`).
 
 **Construir desde el repositorio:**
 
@@ -119,11 +125,16 @@ En todos los casos abre `http://localhost:8000`.
 > Requisitos para que Docker vea la GPU (driver, NVIDIA Container Toolkit,
 > `--gpus all`, capacidades): ver [`docs/docker-gpu.md`](docs/docker-gpu.md).
 
-> **Publicar una nueva versión** (mantenedores):
+> **Publicar una versión** (mantenedores): sube el número en `VERSION` y publica
+> la imagen con ese tag (y `latest`):
 > ```bash
-> docker build -t ppuertot/envy-monitor:latest .
+> ver=$(cat VERSION)                      # p. ej. 0.2.0
+> docker build -t ppuertot/envy-monitor:$ver .
+> docker tag ppuertot/envy-monitor:$ver ppuertot/envy-monitor:latest
+> docker push ppuertot/envy-monitor:$ver
 > docker push ppuertot/envy-monitor:latest
 > ```
+> Opcional: etiquetar el commit (`git tag v$ver && git push origin v$ver`).
 
 ### Variables de entorno
 

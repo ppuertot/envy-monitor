@@ -5,14 +5,16 @@
 #   cp docker-compose.server.yml ~/envy/docker-compose.yml
 #   docker volume create envy-data   # solo la primera vez (volumen externo)
 #   cd ~/envy && docker compose up -d
-# Actualizar:  docker compose pull && docker compose up -d
+# Actualizar: fija ENVY_TAG en .env y  docker compose pull && docker compose up -d
 #
 # El volumen es `external` para reutilizar el histórico existente y para que
 # `docker compose down -v` no lo borre.
 services:
   envy:
     # En los servidores se usa la imagen publicada (sin build).
-    image: ppuertot/envy-monitor:latest
+    # Fija la versión con ENVY_TAG (p. ej. en .env: ENVY_TAG=0.1.0) para que
+    # todos los servidores usen la misma; el defecto es la versión estable.
+    image: ppuertot/envy-monitor:${ENVY_TAG:-0.1.0}
     container_name: envy
     ports:
       - "8080:8000"
@@ -42,6 +44,14 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    # Límites de recursos y rotación de logs
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 # --- Alternativa si `gpus: all` no está soportado ---
 #    deploy:

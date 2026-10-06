@@ -35,6 +35,7 @@ Principios del proyecto:
 | `Dockerfile`, `docker-compose.yml` | Ejecución en contenedor |
 | `docker-compose.server.yml` | Servidores: imagen publicada, puerto 8080, volumen `envy-data` externo |
 | `run.sh` | Arranque directo (acepta puerto como argumento) |
+| `VERSION` | Versión actual (semver); se usa para los tags de imagen |
 | `README.md`, `SUGERENCIAS.md`, `docs/docker-gpu.md` | Documentación |
 | `LICENSE` | Licencia MIT |
 
@@ -165,6 +166,16 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
   `/favicon.ico` y `/healthz`, y redacta el `?token=` (`token=***`). `/healthz`
   (sin auth) responde `503` si la última muestra tiene más de 3 intervalos; lo
   usa el `HEALTHCHECK` del contenedor.
+
+## Publicación / versiones
+
+- `VERSION` (raíz) lleva la versión actual; `requirements.txt` está **fijado**
+  (`==`) para reproducibilidad.
+- En servidores, `docker-compose.server.yml` usa
+  `ppuertot/envy-monitor:${ENVY_TAG:-0.1.0}`; fija `ENVY_TAG` en `.env` para que
+  todos usen la misma versión.
+- **Release manual**: sube `VERSION`, construye y publica ese tag en Docker Hub
+  (y `latest`). Opcionalmente etiqueta el commit con `vX.Y.Z`.
 
 ## Flujo de trabajo (Git / PR)
 
