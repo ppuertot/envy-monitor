@@ -3,6 +3,10 @@ name: release
 # Publica la imagen en Docker Hub al subir un tag `vX.Y.Z` (p. ej. `v0.2.0`):
 #   git tag v0.2.0 && git push origin v0.2.0
 # También se puede lanzar a mano (workflow_dispatch) para publicar `latest`.
+#
+# Una versión ya publicada NO se sobrescribe: si `X.Y.Z` ya existe en Docker Hub,
+# el workflow no reconstruye ni republica (así una imagen no cambia bajo la
+# misma versión).
 on:
   push:
     tags:
@@ -26,8 +30,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Comprobar si la versión ya existe
+        id: check
+        run: |
+          skip=false
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            ver="${GITHUB_REF_NAME#v}"
+            if docker manifest inspect "ppuertot/envy-monitor:${ver}" >/dev/null 2>&1; then
+              echo "::notice::La versión ${ver} ya existe en Docker Hub; no se republica."
+              skip=true
+            fi
+          fi
+          echo "skip=${skip}" >> "$GITHUB_OUTPUT"
+
       - name: Metadatos (tags de la imagen)
         id: meta
+        if: steps.check.outputs.skip != 'true'
         uses: docker/metadata-action@v5
         with:
           images: ppuertot/envy-monitor
@@ -37,6 +55,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build local (para escanear)
+        if: steps.check.outputs.skip != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -44,6 +63,7 @@ jobs:
           tags: envy:scan
 
       - name: Escaneo de vulnerabilidades (Trivy)
+        if: steps.check.outputs.skip != 'true'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: envy:scan
@@ -52,6 +72,7 @@ jobs:
           exit-code: "0" # reporta; pon "1" para bloquear el release
 
       - name: Build y push
+        if: steps.check.outputs.skip != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
