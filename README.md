@@ -54,6 +54,21 @@ docker run -d --name envy --gpus all --pid=host --restart unless-stopped \
 
 Imagen: [`docker.io/ppuertot/envy-monitor`](https://hub.docker.com/r/ppuertot/envy-monitor)
 
+**En servidores, con Compose y la imagen publicada:**
+[`docker-compose.server.yml`](docker-compose.server.yml) usa la imagen de
+Docker Hub (sin build), publica el puerto **8080** y reutiliza el volumen
+`envy-data` como externo (así `docker compose down -v` no borra el histórico).
+Se copia a un directorio propio del servidor:
+
+```bash
+mkdir -p ~/envy && cp docker-compose.server.yml ~/envy/docker-compose.yml
+docker volume create envy-data      # solo la primera vez
+cd ~/envy && docker compose up -d   # abre http://<servidor>:8080
+
+# actualizar a la última imagen
+docker compose pull && docker compose up -d
+```
+
 **Construir desde el repositorio:**
 
 **Opción A — Docker Compose (recomendado):**

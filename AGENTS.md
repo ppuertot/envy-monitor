@@ -32,6 +32,7 @@ Principios del proyecto:
 | `storage.py` | Histórico en SQLite (WAL), reesampleado y poda por retención |
 | `static/` | Frontend sin build: `index.html`, `app.js`, `style.css`, `vendor/` (uPlot) |
 | `Dockerfile`, `docker-compose.yml` | Ejecución en contenedor |
+| `docker-compose.server.yml` | Servidores: imagen publicada, puerto 8080, volumen `envy-data` externo |
 | `run.sh` | Arranque directo (acepta puerto como argumento) |
 | `README.md`, `SUGERENCIAS.md`, `docs/docker-gpu.md` | Documentación |
 | `LICENSE` | Licencia MIT |
