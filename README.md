@@ -14,7 +14,8 @@ Incluye **tema claro/oscuro** y **diseño responsive** (escritorio y móvil).
 
 - Python 3.10+ (probado con 3.14)
 - `nvidia-smi` accesible en el `PATH`
-- Dependencias: `fastapi`, `uvicorn`, `nvidia-ml-py` (esta última opcional)
+- Dependencias: `fastapi`, `uvicorn`, `nvidia-ml-py` (esta última opcional);
+  **versiones fijadas** en `requirements.txt`
 
 ```bash
 pip install -r requirements.txt
@@ -53,6 +54,9 @@ docker run -d --name envy --gpus all --pid=host --restart unless-stopped \
 ```
 
 Imagen: [`docker.io/ppuertot/envy-monitor`](https://hub.docker.com/r/ppuertot/envy-monitor)
+
+> Para reproducibilidad, usa una **versión concreta** en lugar de `latest`
+> (p. ej. `ppuertot/envy-monitor:0.1.0`). La versión actual está en [`VERSION`](VERSION).
 
 **En servidores, con Compose y la imagen publicada:**
 [`docker-compose.server.yml`](docker-compose.server.yml) usa la imagen de
