@@ -56,7 +56,7 @@ En esta máquina ya están instaladas (`fastapi`, `uvicorn`, `nvidia-ml-py`,
 ## Ejecutar
 
 ```bash
-./run.sh                 # http://localhost:8000
+./run.sh                 # http://localhost:8080
 ./run.sh 9000            # otro puerto
 ENVY_BACKEND=smi ./run.sh
 ```
@@ -75,6 +75,7 @@ docker compose up -d --build
 | `ENVY_WINDOW` | `60` | Segundos de histórico en memoria |
 | `ENVY_BACKEND` | `auto` | `auto` \| `nvml` \| `smi` |
 | `ENVY_DB` | `./envy.db` | Ruta del SQLite |
+| `ENVY_PORT` | `8080` | Puerto de escucha |
 | `ENVY_RETENTION_DAYS` | `7` | Días de histórico persistido (`0` = sin límite) |
 | `ENVY_TOKEN` | — | Token opcional para `/api/*` (cabecera o `?token=`) |
 | `ENVY_MAX_CLIENTS` | `20` | Tope de clientes SSE (`0` = sin tope) |
@@ -141,8 +142,9 @@ La BD de desarrollo `envy.db` está en `.gitignore`: no la commitees.
   (por defecto) o del `cmdline` con `ENVY_SHOW_CMDLINE=1` (ver `processes.py`).
 - **PID namespace en Docker**: sin `pid: host`, la pestaña *Processes* sale
   vacía. Ya está activado en `docker-compose.yml`.
-- **Puerto en Docker**: el contenedor escucha fijo en `8000` (`CMD` y
-  `HEALTHCHECK`); súbelo/publícalo con `-p` o Compose.
+- **Puerto en Docker**: el puerto es `ENVY_PORT` (por defecto `8080`) y el
+  contenedor escucha en él (`CMD` y `HEALTHCHECK`). En Compose, `${ENVY_PORT}`
+  mapea host:contenedor; cámbialo con `ENVY_PORT` en `.env`.
 - **Persistencia**: `prune()` se autolimita a una vez por hora; no lo llames en
   bucle. El esquema es aditivo.
 - **uPlot**: si actualizas la versión, reemplaza los archivos de `static/vendor/`

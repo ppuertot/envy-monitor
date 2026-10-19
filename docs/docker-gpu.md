@@ -57,7 +57,7 @@ docker info | grep -A1 Runtimes    # debe aparecer "nvidia"
 **docker run:**
 
 ```bash
-docker run --rm --gpus all -p 8000:8000 -v envy-data:/data envy
+docker run --rm --gpus all -p 8080:8080 -v envy-data:/data envy
 ```
 
 **docker-compose.yml (Compose v2.30+):**
@@ -107,6 +107,6 @@ docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
 Y para `envy`:
 
 ```bash
-curl -s http://localhost:8000/api/snapshot | grep -o '"error":[^,]*'
+curl -s http://localhost:8080/api/snapshot | grep -o '"error":[^,]*'
 # "error": null   -> la GPU se está leyendo bien desde el contenedor
 ```

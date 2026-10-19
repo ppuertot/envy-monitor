@@ -17,10 +17,11 @@ services:
     image: ppuertot/envy-monitor:${ENVY_TAG:-0.1.0}
     container_name: envy
     ports:
-      - "8080:8000"
+      - "${ENVY_PORT:-8080}:${ENVY_PORT:-8080}"
     environment:
       ENVY_INTERVAL: "2"
       ENVY_WINDOW: "60"
+      ENVY_PORT: "${ENVY_PORT:-8080}"
       ENVY_DB: /data/envy.db
       ENVY_RETENTION_DAYS: "7"
       # Seguridad: se toman de .env si existen (ver README → Seguridad)
