@@ -4,11 +4,12 @@ Backend FastAPI que muestrea `nvidia-smi` periódicamente y emite los datos a
 los navegadores por Server-Sent Events (SSE).
 
 Ejecutar:
-    uvicorn app:app --host 0.0.0.0 --port 8000
+    uvicorn app:app --host 0.0.0.0 --port 8080
 
 Variables de entorno:
     ENVY_INTERVAL         segundos entre muestras (por defecto 2)
     ENVY_WINDOW           segundos de histórico en memoria (por defecto 60)
+    ENVY_PORT             puerto de escucha (por defecto 8080)
     ENVY_DB               ruta del SQLite (por defecto ./envy.db)
     ENVY_RETENTION_DAYS   días de histórico persistido (por defecto 7; 0 = sin límite)
     ENVY_TOKEN            token opcional para /api/* (por defecto: sin auth)
@@ -43,6 +44,7 @@ STATIC_DIR = BASE_DIR / "static"
 
 INTERVAL = float(os.environ.get("ENVY_INTERVAL", "2"))
 WINDOW = float(os.environ.get("ENVY_WINDOW", "60"))
+PORT = int(os.environ.get("ENVY_PORT", "8080"))
 DB_PATH = os.environ.get("ENVY_DB", str(BASE_DIR / "envy.db"))
 RETENTION_DAYS = float(os.environ.get("ENVY_RETENTION_DAYS", "7"))
 TOKEN = (os.environ.get("ENVY_TOKEN") or "").strip() or None
@@ -314,4 +316,4 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("app:app", host="0.0.0.0", port=PORT, reload=False)

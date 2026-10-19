@@ -22,13 +22,15 @@ RUN useradd --system --uid 10001 --home-dir /app --shell /usr/sbin/nologin envy 
 
 # Histórico persistido (montar un volumen en /data para que sobreviva)
 ENV ENVY_DB=/data/envy.db
+# Puerto de escucha (configurable con -e ENVY_PORT=...)
+ENV ENVY_PORT=8080
 VOLUME ["/data"]
 
 USER envy
 
-EXPOSE 8000
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz').status == 200 else 1)"
+    CMD python -c "import os,urllib.request,sys; p=os.environ.get('ENVY_PORT','8080'); sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:'+p+'/healthz').status == 200 else 1)"
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "exec uvicorn app:app --host 0.0.0.0 --port ${ENVY_PORT:-8080}"]

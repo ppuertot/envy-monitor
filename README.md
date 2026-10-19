@@ -32,14 +32,14 @@ pip install -r requirements.txt
 ### Directo (Python)
 
 ```bash
-./run.sh            # http://localhost:8000
+./run.sh            # http://localhost:8080
 ./run.sh 9000       # otro puerto
 ```
 
 o directamente:
 
 ```bash
-python3 -m uvicorn app:app --host 0.0.0.0 --port 8000
+python3 -m uvicorn app:app --host 0.0.0.0 --port 8080
 ```
 
 ### Docker
@@ -50,7 +50,7 @@ python3 -m uvicorn app:app --host 0.0.0.0 --port 8000
 docker pull ppuertot/envy-monitor:latest
 
 docker run -d --name envy --gpus all --pid=host --restart unless-stopped \
-  -p 8000:8000 -v envy-data:/data ppuertot/envy-monitor:latest
+  -p 8080:8080 -v envy-data:/data ppuertot/envy-monitor:latest
 ```
 
 Imagen: [`docker.io/ppuertot/envy-monitor`](https://hub.docker.com/r/ppuertot/envy-monitor)
@@ -77,7 +77,8 @@ docker compose pull && docker compose up -d
 > `ENVY_TAG` en un `.env` (p. ej. `ENVY_TAG=0.1.0`) para que **todos los
 > servidores usen la misma versión**, y súbela al actualizar. El compose aplica
 > además `mem_limit: 256m`, `cpus: 0.5` y rotación de logs (`max-size: 10m`,
-> `max-file: 3`).
+> `max-file: 3`). El puerto se puede cambiar con `ENVY_PORT` en `.env` (por
+> defecto `8080`, tanto en el host como en el contenedor).
 
 **Construir desde el repositorio:**
 
@@ -95,18 +96,18 @@ docker build -t envy:latest .
 
 # 2) arrancar el contenedor
 docker run -d --name envy --gpus all --pid=host --restart unless-stopped \
-  -p 8000:8000 -v envy-data:/data \
+  -p 8080:8080 -v envy-data:/data \
   -e ENVY_DB=/data/envy.db -e ENVY_INTERVAL=2 -e ENVY_WINDOW=60 -e ENVY_RETENTION_DAYS=7 \
   envy:latest
 ```
 
-En todos los casos abre `http://localhost:8000`.
+En todos los casos abre `http://localhost:8080`.
 
 > Los `-e ENVY_*` son opcionales: el `Dockerfile` ya fija `ENVY_DB=/data/envy.db` y
 > el resto tiene esos mismos valores por defecto (ver *Variables de entorno*).
 > La versión mínima sería:
 > ```bash
-> docker run -d --name envy --gpus all --pid=host -p 8000:8000 \
+> docker run -d --name envy --gpus all --pid=host -p 8080:8080 \
 >   -v envy-data:/data --restart unless-stopped envy:latest
 > ```
 > El volumen `envy-data` se crea solo si no existe.
@@ -153,6 +154,7 @@ En todos los casos abre `http://localhost:8000`.
 |-----------------|-------------|------------------------------------------|
 | `ENVY_INTERVAL` | `2`         | Segundos entre muestras (paso de la gráfica). |
 | `ENVY_WINDOW`   | `60`        | Segundos de histórico en memoria (gráfica en vivo). |
+| `ENVY_PORT`     | `8080`      | Puerto de escucha del servicio.          |
 | `ENVY_BACKEND`  | `auto`      | Backend de datos: `auto`, `nvml` o `smi`. |
 | `ENVY_DB`       | `./envy.db` | Ruta del archivo SQLite del histórico.   |
 | `ENVY_RETENTION_DAYS` | `7`   | Días de histórico persistido (poda horaria); `0` = **sin límite**. |
@@ -291,7 +293,7 @@ openssl rand -hex 32
 Después abre la web **una vez** con `http://host:8080/?token=mi-token`; el token
 queda guardado en el navegador. Sin `ENVY_TOKEN`, no hay autenticación.
 
-Si no quieres publicar el puerto, usa `-p 127.0.0.1:8000:8000` y accede por
+Si no quieres publicar el puerto, usa `-p 127.0.0.1:8080:8080` y accede por
 **túnel SSH** en lugar de exponerlo a la red.
 
 ## Notas

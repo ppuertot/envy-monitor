@@ -24,11 +24,10 @@ Ideas pendientes para `envy`. No implementadas todavía.
   `docker tag … ghcr.io/ppuertot/envy-monitor:latest && docker push …`.
   Alternativa **ya verificada**: Docker Hub (`docker.io/ppuertot/envy-monitor`),
   las credenciales actuales sí permiten `push`.
-- **Puerto/host parametrizables y unificados**: hoy el puerto está disperso
-  (`run.sh [puerto]` por argumento; `app.py`, `Dockerfile` y `docker-compose.yml`
-  con `8000` fijo). Unificar en variables (p. ej. `ENVY_PORT` / `ENVY_HOST`)
-  respetadas por las tres vías, incluidos el `CMD` y el `HEALTHCHECK` del
-  contenedor y el mapeo de `ports` en Compose.
+- **Puerto/host parametrizables**: el **puerto** ya se unifica con `ENVY_PORT`
+  (por defecto `8080`), respetado por `run.sh`, `app.py`, `Dockerfile`
+  (`CMD` + `HEALTHCHECK`) y el `ports` de Compose. **Pendiente**: `ENVY_HOST`
+  (dirección de bind).
 - **Configuración por archivo/CLI**: además de `ENVY_INTERVAL` / `ENVY_WINDOW`,
   permitir elegir puerto, bind, GPUs a mostrar y tema.
 
